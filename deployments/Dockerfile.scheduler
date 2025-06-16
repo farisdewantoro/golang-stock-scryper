@@ -3,6 +3,9 @@
 # Stage 1: Build the application
 FROM golang:1.23-alpine AS builder
 
+# Install git and ca-certificates (needed for go mod download)
+RUN apk add --no-cache git ca-certificates tzdata
+
 WORKDIR /app
 
 # Copy go.mod and go.sum files to download dependencies
