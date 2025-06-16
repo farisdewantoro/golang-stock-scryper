@@ -64,7 +64,6 @@ func (s *schedulerService) Start(ctx context.Context) {
 
 // ProcessJobs finds and enqueues jobs that are due.
 func (s *schedulerService) ProcessJobs(ctx context.Context) {
-	s.logger.Info("Processing jobs...")
 	jobs, err := s.jobRepo.FindJobsToSchedule(ctx)
 	if err != nil {
 		s.logger.Error("Failed to find jobs to schedule", logger.ErrorField(err))
