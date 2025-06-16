@@ -127,7 +127,7 @@ func runServe(cmd *cobra.Command, args []string) {
 
 	// Start server
 	go func() {
-		addr := fmt.Sprintf("%s:%d", cfg.API.Host, cfg.API.Port)
+		addr := fmt.Sprintf(":%d", cfg.API.Port)
 		appLogger.Info("HTTP server starting", logger.Field("address", addr))
 		if err := e.Start(addr); err != nil && err != http.ErrServerClosed {
 			appLogger.Error("HTTP server failed to start", logger.ErrorField(err))
