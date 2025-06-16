@@ -1,6 +1,6 @@
 # Makefile for Golang Job Scheduler
 
-.PHONY: all build clean run test help swag-install docs migrate docker-up docker-down docker-deps-up docker-deps-down docker-logs
+.PHONY: all build clean run test help swag-install generate-docs migrate docker-up docker-down docker-deps-up docker-deps-down docker-logs
 
 # Variables
 APP_NAME_SCHEDULER := scheduling-service
@@ -45,9 +45,9 @@ swag-install:
 	@echo "Installing swag CLI..."
 	go install github.com/swaggo/swag/cmd/swag@latest
 
-docs:
+generate-docs:
 	@echo "Generating Swagger docs..."
-	go run github.com/swaggo/swag/cmd/swag init -g cmd/scheduling-service/main.go --output internal/scheduler/docs
+	swag init -g cmd/scheduling-service/main.go --output internal/scheduler/docs
 
 
 # Database migration command
@@ -89,7 +89,7 @@ help:
 	@echo "  clean              Remove build artifacts"
 	@echo "  test               Run tests (not yet implemented)"
 	@echo "  swag-install       Install the swag CLI tool"
-	@echo "  docs               Generate Swagger API documentation"
+	@echo "  generate-docs      Generate Swagger API documentation"
 	@echo "  docker-up          Start services with Docker Compose"
 	@echo "  docker-down        Stop services with Docker Compose"
 	@echo "  docker-deps-up     Start dependencies with Docker Compose"
