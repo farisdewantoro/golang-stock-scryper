@@ -1,0 +1,46 @@
+app:
+  name: "golang-stock-scryper-executor"
+
+database:
+  host: "localhost" # For local development, use 'postgres' for docker-compose
+  port: 5434
+  name: "job_scheduler_db"
+  user: "postgres"
+  password: "password"
+  ssl_mode: "disable"
+  max_open_conns: 25
+  max_idle_conns: 5
+  conn_max_lifetime: "5m"
+
+redis:
+  host: "localhost" # For local development, use 'redis' for docker-compose
+  port: 6379
+  password: ""
+  db: 0
+  pool_size: 10
+
+executor:
+  max_concurrent_tasks: 10
+  default_task_timeout: "5m"
+
+logger:
+  level: "info" # debug, info, warn, error, fatal, panic
+  encoding: "json" # json, console
+
+openrouter:
+  api_key: "xxxxx"
+  model: "deepseek/deepseek-chat-v3-0324:free"
+
+gemini:
+  api_key: "xxxxx"
+  model: "gemini-2.0-flash"
+  max_request_per_minute: 15
+  max_token_per_minute: 1_000_000
+
+ai:
+  provider: "gemini" # openrouter or gemini
+
+telegram:
+  bot_token: "xxxx"
+  chat_id: xxxx
+  

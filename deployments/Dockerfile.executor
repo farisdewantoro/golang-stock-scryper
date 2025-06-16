@@ -1,0 +1,34 @@
+# Dockerfile for Execution Service
+
+# Stage 1: Build the application
+FROM golang:1.23-alpine AS builder
+
+WORKDIR /app
+
+# Copy go.mod and go.sum files to download dependencies
+COPY go.mod go.sum ./
+
+# Download dependencies
+RUN go mod download
+
+# Copy the source code
+COPY . .
+
+# Build the executor service binary
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /app/executor-service ./cmd/execution-service/main.go
+
+# Stage 2: Create the final lightweight image
+FROM alpine:latest
+
+WORKDIR /app
+
+# Copy the binary from the builder stage
+COPY --from=builder /app/executor-service .
+
+# Copy configuration files (optional, can be mounted via volume)
+COPY configs/config-executor.yaml /app/configs/config-executor.yaml
+
+# Command to run the application
+# The actual command might depend on how configuration is passed
+ENTRYPOINT ["/app/executor-service"]
+CMD ["serve"]

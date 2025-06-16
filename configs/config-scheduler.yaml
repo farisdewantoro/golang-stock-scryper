@@ -1,0 +1,34 @@
+app:
+  name: "golang-stock-scryper-scheduler"
+
+database:
+  host: "localhost" # For local development, use 'postgres' for docker-compose
+  port: 5434
+  name: "job_scheduler_db"
+  user: "postgres"
+  password: "password"
+  ssl_mode: "disable"
+  max_open_conns: 25
+  max_idle_conns: 5
+  conn_max_lifetime: "5m"
+
+redis:
+  host: "localhost" # For local development, use 'redis' for docker-compose
+  port: 6379
+  password: ""
+  db: 0
+  pool_size: 10
+  stream_max_len: 100
+
+scheduler:
+  polling_interval: "5s"
+  max_concurrent_jobs: 10
+  default_timeout: "5m"
+
+api:
+  host: "0.0.0.0"
+  port: 8080
+
+logger:
+  level: "debug" # debug, info, warn, error, fatal, panic
+  encoding: "json" # json, console

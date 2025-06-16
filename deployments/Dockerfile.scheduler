@@ -1,0 +1,37 @@
+# Dockerfile for Scheduling Service
+
+# Stage 1: Build the application
+FROM golang:1.23-alpine AS builder
+
+WORKDIR /app
+
+# Copy go.mod and go.sum files to download dependencies
+COPY go.mod go.sum ./
+
+# Download dependencies
+RUN go mod download
+
+# Copy the source code
+COPY . .
+
+# Build the scheduler service binary
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /app/scheduler-service ./cmd/scheduling-service/main.go
+
+# Stage 2: Create the final lightweight image
+FROM alpine:latest
+
+WORKDIR /app
+
+# Copy the binary from the builder stage
+COPY --from=builder /app/scheduler-service .
+
+# Copy configuration files (optional, can be mounted via volume)
+COPY configs/config-scheduler.yaml /app/configs/config-scheduler.yaml
+
+# Expose the port the service runs on
+EXPOSE 8080
+
+# Command to run the application
+# The actual command might depend on how configuration is passed (e.g., env vars, config file path)
+ENTRYPOINT ["/app/scheduler-service"]
+CMD ["serve"]

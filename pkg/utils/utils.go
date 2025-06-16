@@ -1,0 +1,49 @@
+package utils
+
+import (
+	"bytes"
+	"html"
+	"log"
+	"unicode/utf8"
+)
+
+// ContainsString checks if a slice of strings contains a specific string.
+func ContainsString(slice []string, str string) bool {
+	for _, item := range slice {
+		if item == str {
+			return true
+		}
+	}
+	return false
+}
+
+func CleanToValidUTF8(s string) string {
+	var buf bytes.Buffer
+	for i := 0; i < len(s); {
+		r, size := utf8.DecodeRuneInString(s[i:])
+		if r == utf8.RuneError && size == 1 {
+			// Skip byte yang rusak
+			i++
+			continue
+		}
+		buf.WriteRune(r)
+		i += size
+	}
+	return buf.String()
+}
+
+func SafeText(text string) string {
+	return CleanToValidUTF8(html.UnescapeString(text))
+}
+
+// GoSafe runs the given function in a new goroutine and recovers from any panic.
+func GoSafe(fn func()) {
+	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				log.Printf("[Panic Recovered] %v", r)
+			}
+		}()
+		fn()
+	}()
+}

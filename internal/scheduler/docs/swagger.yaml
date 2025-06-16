@@ -1,0 +1,515 @@
+basePath: /api/v1
+definitions:
+  dto.CreateJobRequest:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+      payload:
+        type: object
+      retry_policy:
+        $ref: '#/definitions/dto.RetryPolicyDTO'
+      schedules:
+        items:
+          $ref: '#/definitions/dto.ScheduleDTO'
+        type: array
+      timeout:
+        description: in seconds
+        type: integer
+      type:
+        type: string
+    type: object
+  dto.CreateScheduleRequest:
+    properties:
+      cron_expression:
+        type: string
+      is_active:
+        type: boolean
+      job_id:
+        type: integer
+    type: object
+  dto.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  dto.ExecutionHistoryResponse:
+    properties:
+      duration_ms:
+        type: integer
+      executed_at:
+        type: string
+      id:
+        type: integer
+      job_id:
+        type: integer
+      output:
+        type: string
+      schedule_id:
+        type: integer
+      status:
+        type: string
+    type: object
+  dto.JobResponse:
+    properties:
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      payload:
+        type: object
+      retry_policy:
+        $ref: '#/definitions/dto.RetryPolicyDTO'
+      schedules:
+        items:
+          $ref: '#/definitions/dto.ScheduleResponseDTO'
+        type: array
+      timeout:
+        type: integer
+      type:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  dto.RetryPolicyDTO:
+    properties:
+      backoff_strategy:
+        description: e.g., "exponential", "fixed"
+        type: string
+      initial_interval:
+        description: e.g., "5s", "1m"
+        type: string
+      max_retries:
+        type: integer
+    type: object
+  dto.ScheduleDTO:
+    properties:
+      cron_expression:
+        type: string
+      is_active:
+        type: boolean
+    type: object
+  dto.ScheduleResponse:
+    properties:
+      created_at:
+        type: string
+      cron_expression:
+        type: string
+      id:
+        type: integer
+      is_active:
+        type: boolean
+      job_id:
+        type: integer
+      last_execution:
+        format: date-time
+        type: string
+      next_execution:
+        format: date-time
+        type: string
+      updated_at:
+        type: string
+    type: object
+  dto.ScheduleResponseDTO:
+    properties:
+      cron_expression:
+        type: string
+      id:
+        type: integer
+      is_active:
+        type: boolean
+      last_execution:
+        format: date-time
+        type: string
+      next_execution:
+        format: date-time
+        type: string
+    type: object
+  dto.UpdateJobRequest:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+      payload:
+        type: object
+      retry_policy:
+        $ref: '#/definitions/dto.RetryPolicyDTO'
+      schedules:
+        items:
+          $ref: '#/definitions/dto.ScheduleDTO'
+        type: array
+      timeout:
+        description: in seconds
+        type: integer
+      type:
+        type: string
+    type: object
+  dto.UpdateScheduleRequest:
+    properties:
+      cron_expression:
+        type: string
+      is_active:
+        type: boolean
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@swagger.io
+    name: API Support
+    url: http://www.swagger.io/support
+  description: This is a sample server for a job scheduler.
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: Job Scheduler API
+  version: "1.0"
+paths:
+  /executions:
+    get:
+      description: Get all execution history records
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.ExecutionHistoryResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Get all execution histories
+      tags:
+      - executions
+  /executions/{id}:
+    get:
+      description: Get a single execution history record by its ID
+      parameters:
+      - description: Execution History ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ExecutionHistoryResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Get an execution history by ID
+      tags:
+      - executions
+  /jobs:
+    get:
+      description: Get all jobs
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.JobResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Get all jobs
+      tags:
+      - jobs
+    post:
+      consumes:
+      - application/json
+      description: Create a new job with schedules
+      parameters:
+      - description: Job to create
+        in: body
+        name: job
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateJobRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.JobResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Create a new job
+      tags:
+      - jobs
+  /jobs/{id}:
+    delete:
+      description: Delete a job by its ID
+      parameters:
+      - description: Job ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Delete a job
+      tags:
+      - jobs
+    get:
+      description: Get a single job by its ID
+      parameters:
+      - description: Job ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.JobResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Get a job by ID
+      tags:
+      - jobs
+    put:
+      consumes:
+      - application/json
+      description: Update an existing job with the given details
+      parameters:
+      - description: Job ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Job to update
+        in: body
+        name: job
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateJobRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.JobResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Update an existing job
+      tags:
+      - jobs
+  /jobs/{id}/executions:
+    get:
+      description: Get all execution history records for a specific job ID
+      parameters:
+      - description: Job ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.ExecutionHistoryResponse'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Get execution histories for a job
+      tags:
+      - jobs
+  /schedules:
+    get:
+      description: Get all schedules
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.ScheduleResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Get all schedules
+      tags:
+      - schedules
+    post:
+      consumes:
+      - application/json
+      description: Create a new schedule with the given details
+      parameters:
+      - description: Schedule to create
+        in: body
+        name: schedule
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateScheduleRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.ScheduleResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Create a new schedule
+      tags:
+      - schedules
+  /schedules/{id}:
+    delete:
+      description: Delete a schedule by its ID
+      parameters:
+      - description: Schedule ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Delete a schedule
+      tags:
+      - schedules
+    get:
+      description: Get a schedule by its ID
+      parameters:
+      - description: Schedule ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ScheduleResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Get a schedule by its ID
+      tags:
+      - schedules
+    put:
+      consumes:
+      - application/json
+      description: Update an existing schedule with the given details
+      parameters:
+      - description: Schedule ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Schedule to update
+        in: body
+        name: schedule
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateScheduleRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ScheduleResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Update an existing schedule
+      tags:
+      - schedules
+swagger: "2.0"

@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  scheduler-service:
+    build:
+      context: ..
+      dockerfile: deployments/Dockerfile.scheduler
+    container_name: scheduler_service
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+      - redis
+    environment:
+      # Define environment variables for scheduler service
+      # Example: DB_HOST=postgres, REDIS_HOST=redis
+      CONFIG_PATH: /app/configs/config-scheduler.yaml
+    volumes:
+      - ../configs:/app/configs
+      # Mount other necessary volumes
+    networks:
+      - job_scheduler_network
+    restart: unless-stopped
+
+  executor-service:
+    build:
+      context: ..
+      dockerfile: deployments/Dockerfile.executor
+    container_name: executor_service
+    depends_on:
+      - postgres
+      - redis
+    environment:
+      # Define environment variables for executor service
+      # Example: DB_HOST=postgres, REDIS_HOST=redis
+      CONFIG_PATH: /app/configs/config-executor.yaml
+    volumes:
+      - ../configs:/app/configs
+      # Mount other necessary volumes
+    networks:
+      - job_scheduler_network
+    restart: unless-stopped
+
+networks:
+  job_scheduler_network:
+    external: true
