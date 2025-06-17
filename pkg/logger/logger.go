@@ -23,7 +23,16 @@ func New(level, encoding string) (*Logger, error) {
 		config.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
 	} else { // default to json
 		config = zap.NewProductionConfig()
+		// Use ISO8601 time format as it's more human-readable and parsed by Railway.
 		config.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+		// Use Zap's default keys ("ts", "level", "msg") which are common standards
+		// that log aggregators like Railway are more likely to parse correctly.
+		config.EncoderConfig.TimeKey = "ts"
+		config.EncoderConfig.LevelKey = "level"
+		config.EncoderConfig.MessageKey = "msg"
+		config.EncoderConfig.CallerKey = "caller"
+		config.EncoderConfig.StacktraceKey = "stacktrace"
+		config.EncoderConfig.NameKey = "logger"
 	}
 
 	logLevel := zap.NewAtomicLevel()
@@ -31,13 +40,6 @@ func New(level, encoding string) (*Logger, error) {
 		return nil, fmt.Errorf("invalid log level: %w", err)
 	}
 	config.Level = logLevel
-
-	// Add caller skip to avoid logging the logger itself
-	config.EncoderConfig.CallerKey = "caller"
-	config.EncoderConfig.StacktraceKey = "stacktrace"
-	config.EncoderConfig.TimeKey = "timestamp"
-	config.EncoderConfig.MessageKey = "message"
-	config.EncoderConfig.LevelKey = "level"
 
 	logger, err := config.Build(zap.AddCallerSkip(1))
 	if err != nil {
