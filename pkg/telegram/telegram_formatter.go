@@ -3,6 +3,7 @@ package telegram
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"golang-stock-scryper/internal/entity"
 	"golang-stock-scryper/internal/executor/dto"
@@ -151,7 +152,7 @@ const (
 )
 
 // FormatStockAlertResultForTelegram formats the stock alert result into a Markdown string for Telegram.
-func FormatStockAlertResultForTelegram(alertType AlertType, stockCode string, triggerPrice float64, targetPrice float64) string {
+func FormatStockAlertResultForTelegram(alertType AlertType, stockCode string, triggerPrice float64, targetPrice float64, timestamp int64) string {
 	var builder strings.Builder
 
 	var title, emoji string
@@ -167,8 +168,8 @@ func FormatStockAlertResultForTelegram(alertType AlertType, stockCode string, tr
 		emoji = "🔔"
 	}
 
-	builder.WriteString(fmt.Sprintf("%s [%s] %s\n", stockCode, emoji, title))
+	builder.WriteString(fmt.Sprintf("%s [%s] %s\n", emoji, stockCode, title))
 	builder.WriteString(fmt.Sprintf("💰Harga menyentuh: %.3f (target: %.3f)\n", triggerPrice, targetPrice))
-	builder.WriteString(fmt.Sprintf("🗓️ %s\n", utils.PrettyDate(utils.TimeNowWIB())))
+	builder.WriteString(fmt.Sprintf("%s\n", utils.PrettyDate(time.Unix(timestamp, 0))))
 	return builder.String()
 }

@@ -90,26 +90,31 @@ func (s *StockPriceAlertStrategy) Execute(ctx context.Context, job *entity.Job) 
 			continue
 		}
 
-		reachTakeProfitIn := 0.0
-		reachStopLossIn := 0.0
+		reachTakeProfitIn := -1.0
+		reachStopLossIn := -1.0
+		timestampProfit := int64(0)
+		timestampLoss := int64(0)
 		for _, stockDataPoint := range stockData.OHLCV {
 			if stockDataPoint.High >= stockPosition.TakeProfitPrice {
 				reachTakeProfitIn = stockDataPoint.High
+				timestampProfit = stockDataPoint.Timestamp
+
 			}
 			if stockDataPoint.Low <= stockPosition.StopLossPrice {
 				reachStopLossIn = stockDataPoint.Low
+				timestampLoss = stockDataPoint.Timestamp
 			}
 		}
 
 		if reachTakeProfitIn > 0 {
-			message := telegram.FormatStockAlertResultForTelegram(telegram.TakeProfit, stockPosition.StockCode, stockPosition.TakeProfitPrice, reachTakeProfitIn)
+			message := telegram.FormatStockAlertResultForTelegram(telegram.TakeProfit, stockPosition.StockCode, reachTakeProfitIn, stockPosition.TakeProfitPrice, timestampProfit)
 			err := s.telegramNotifier.SendMessage(message)
 			if err != nil {
 				s.logger.Error("Failed to send take profit alert", logger.ErrorField(err), logger.StringField("stock_code", stockPosition.StockCode))
 			}
 		}
 		if reachStopLossIn > 0 {
-			message := telegram.FormatStockAlertResultForTelegram(telegram.StopLoss, stockPosition.StockCode, stockPosition.StopLossPrice, reachStopLossIn)
+			message := telegram.FormatStockAlertResultForTelegram(telegram.StopLoss, stockPosition.StockCode, reachStopLossIn, stockPosition.StopLossPrice, timestampLoss)
 			err := s.telegramNotifier.SendMessage(message)
 			if err != nil {
 				s.logger.Error("Failed to send stop loss alert", logger.ErrorField(err), logger.StringField("stock_code", stockPosition.StockCode))

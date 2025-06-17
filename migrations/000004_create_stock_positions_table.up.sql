@@ -8,6 +8,5 @@ CREATE TABLE stock_positions (
   max_holding_period_days INT,
   is_alert_triggered BOOLEAN DEFAULT false,
   last_alerted_at TIMESTAMP,
-  alert_count INT DEFAULT 0,
   created_at TIMESTAMP DEFAULT now()
 );
