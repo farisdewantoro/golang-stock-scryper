@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"time"
 
@@ -64,31 +65,29 @@ func (s *schedulerService) Start(ctx context.Context) {
 
 // ProcessJobs finds and enqueues jobs that are due.
 func (s *schedulerService) ProcessJobs(ctx context.Context) {
-	jobs, err := s.jobRepo.FindJobsToSchedule(ctx)
+	schedules, err := s.scheduleRepo.FindJobsToSchedule(ctx)
 	if err != nil {
 		s.logger.Error("Failed to find jobs to schedule", logger.ErrorField(err))
 		return
 	}
 
-	for _, job := range jobs {
-		for _, schedule := range job.Schedules {
-			s.publishTask(ctx, job, schedule)
-		}
+	for _, schedule := range schedules {
+		s.publishTask(ctx, schedule)
 	}
 }
 
-func (s *schedulerService) publishTask(ctx context.Context, job entity.Job, schedule entity.TaskSchedule) {
+func (s *schedulerService) publishTask(ctx context.Context, schedule entity.TaskSchedule) {
 	now := time.Now()
 
 	history := &entity.TaskExecutionHistory{
-		JobID:      job.ID,
+		JobID:      schedule.JobID,
 		ScheduleID: schedule.ID,
 		Status:     entity.StatusRunning, // Or a new "Queued" status
 		StartedAt:  now,
 	}
 
 	if err := s.historyRepo.Create(ctx, history); err != nil {
-		s.logger.Error("Failed to create task history", logger.ErrorField(err), logger.Field("job_id", job.ID))
+		s.logger.Error("Failed to create task history", logger.ErrorField(err), logger.Field("schedule_id", schedule.ID))
 		return
 	}
 
@@ -104,7 +103,14 @@ func (s *schedulerService) publishTask(ctx context.Context, job entity.Job, sche
 		MaxLen: s.cfg.Redis.StreamMaxLen, // Limit the stream size
 	}).Err(); err != nil {
 		s.logger.Error("Failed to enqueue task", logger.ErrorField(err), logger.Field("history_id", history.ID))
-		// TODO: Add logic to update history status to failed
+		history.Status = entity.StatusFailed
+		history.CompletedAt.Time = time.Now()
+		history.CompletedAt.Valid = true
+		history.ErrorMessage = sql.NullString{String: err.Error(), Valid: true}
+		errInner := s.historyRepo.Update(ctx, history)
+		if errInner != nil {
+			s.logger.Error("Failed to update task history", logger.ErrorField(errInner), logger.Field("history_id", history.ID))
+		}
 		return
 	}
 

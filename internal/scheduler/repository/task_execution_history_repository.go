@@ -14,6 +14,7 @@ type TaskExecutionHistoryRepository interface {
 	FindByID(ctx context.Context, id uint) (*entity.TaskExecutionHistory, error)
 	FindAll(ctx context.Context) ([]entity.TaskExecutionHistory, error)
 	FindAllByJobID(ctx context.Context, jobID uint) ([]entity.TaskExecutionHistory, error)
+	Update(ctx context.Context, history *entity.TaskExecutionHistory) error
 }
 
 // NewTaskExecutionHistoryRepository creates a new GORM-based task execution history repository.
@@ -55,4 +56,9 @@ func (r *taskExecutionHistoryRepository) FindAllByJobID(ctx context.Context, job
 		return nil, err
 	}
 	return histories, nil
+}
+
+// Update update task execution history record
+func (r *taskExecutionHistoryRepository) Update(ctx context.Context, history *entity.TaskExecutionHistory) error {
+	return r.db.WithContext(ctx).Updates(history).Error
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"golang-stock-scryper/internal/entity"
+	"golang-stock-scryper/pkg/utils"
 
 	"gorm.io/gorm"
 )
@@ -15,6 +16,7 @@ type TaskScheduleRepository interface {
 	FindAll(ctx context.Context) ([]entity.TaskSchedule, error)
 	Update(ctx context.Context, schedule *entity.TaskSchedule) error
 	Delete(ctx context.Context, id uint) error
+	FindJobsToSchedule(ctx context.Context) ([]entity.TaskSchedule, error)
 }
 
 // NewTaskScheduleRepository creates a new GORM-based task schedule repository.
@@ -57,4 +59,17 @@ func (r *taskScheduleRepository) Update(ctx context.Context, schedule *entity.Ta
 // Delete removes a task schedule by its ID.
 func (r *taskScheduleRepository) Delete(ctx context.Context, id uint) error {
 	return r.db.WithContext(ctx).Delete(&entity.TaskSchedule{}, id).Error
+}
+
+// FindJobsToSchedule find all active jobs with schedules that need to be run
+func (r *taskScheduleRepository) FindJobsToSchedule(ctx context.Context) ([]entity.TaskSchedule, error) {
+	var schedules []entity.TaskSchedule
+	// Find jobs with active schedules that are due
+	err := r.db.WithContext(ctx).Debug().
+		Where("is_active = ? AND (next_execution IS NULL OR next_execution <= ?)", true, utils.TimeNowWIB()).
+		Find(&schedules).Error
+	if err != nil {
+		return nil, err
+	}
+	return schedules, nil
 }
