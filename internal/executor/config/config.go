@@ -35,17 +35,24 @@ type Telegram struct {
 	ChatID   int64  `mapstructure:"chat_id"`
 }
 
+// YahooFinance holds the configuration for the Yahoo Finance API.
+type YahooFinance struct {
+	BaseURL             string `mapstructure:"base_url"`
+	MaxRequestPerMinute int    `mapstructure:"max_request_per_minute"`
+}
+
 // Config holds the full configuration for the executor service.
 type Config struct {
-	App        config.App      `mapstructure:"app"`
-	Logger     config.Logger   `mapstructure:"logger"`
-	Database   config.Database `mapstructure:"database"`
-	Redis      config.Redis    `mapstructure:"redis"`
-	Executor   Executor        `mapstructure:"executor"`
-	OpenRouter OpenRouter      `mapstructure:"openrouter"`
-	Gemini     Gemini          `mapstructure:"gemini"`
-	AI         AI              `mapstructure:"ai"`
-	Telegram   Telegram        `mapstructure:"telegram"`
+	App          config.App      `mapstructure:"app"`
+	Logger       config.Logger   `mapstructure:"logger"`
+	Database     config.Database `mapstructure:"database"`
+	Redis        config.Redis    `mapstructure:"redis"`
+	Executor     Executor        `mapstructure:"executor"`
+	OpenRouter   OpenRouter      `mapstructure:"openrouter"`
+	Gemini       Gemini          `mapstructure:"gemini"`
+	AI           AI              `mapstructure:"ai"`
+	Telegram     Telegram        `mapstructure:"telegram"`
+	YahooFinance YahooFinance    `mapstructure:"yahoo_finance"`
 }
 
 // Load loads the executor configuration from the given path.

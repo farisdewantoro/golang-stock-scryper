@@ -28,11 +28,11 @@ logger:
   encoding: "json" # json, console
 
 openrouter:
-  api_key: "xxxxx"
+  api_key: "sk-or-v1-xxxx"
   model: "deepseek/deepseek-chat-v3-0324:free"
 
 gemini:
-  api_key: "xxxxx"
+  api_key: "Axxx8"
   model: "gemini-2.0-flash"
   max_request_per_minute: 15
   max_token_per_minute: 1_000_000
@@ -41,6 +41,9 @@ ai:
   provider: "gemini" # openrouter or gemini
 
 telegram:
-  bot_token: "xxxx"
-  chat_id: xxxx
-  
+  bot_token: "x:xxx"
+  chat_id: 123
+
+yahoo_finance:
+  base_url: "https://query1.finance.yahoo.com/v8/finance/chart"
+  max_request_per_minute: 15

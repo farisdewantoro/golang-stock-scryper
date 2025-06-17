@@ -6,6 +6,7 @@ import (
 
 	"golang-stock-scryper/internal/entity"
 	"golang-stock-scryper/internal/executor/dto"
+	"golang-stock-scryper/pkg/utils"
 )
 
 // FormatNewsSummariesForTelegram formats a slice of NewsSummaryTelegramResult into multiple Markdown strings for Telegram,
@@ -138,5 +139,36 @@ func FormatStockNewsSummaryForTelegram(summary *entity.StockNewsSummary) string 
 	// --- End of Summary ---
 	builder.WriteString("--- 🔚 *End of Summary* ---\n")
 
+	return builder.String()
+}
+
+// AlertType represents the type of alert
+type AlertType string
+
+const (
+	TakeProfit AlertType = "TAKE_PROFIT"
+	StopLoss   AlertType = "STOP_LOSS"
+)
+
+// FormatStockAlertResultForTelegram formats the stock alert result into a Markdown string for Telegram.
+func FormatStockAlertResultForTelegram(alertType AlertType, stockCode string, triggerPrice float64, targetPrice float64) string {
+	var builder strings.Builder
+
+	var title, emoji string
+	switch alertType {
+	case TakeProfit:
+		title = "Take Profit Triggered!"
+		emoji = "🎯"
+	case StopLoss:
+		title = "Stop Loss Triggered!"
+		emoji = "⚠️"
+	default:
+		title = "Price Alert"
+		emoji = "🔔"
+	}
+
+	builder.WriteString(fmt.Sprintf("%s [%s] %s\n", stockCode, emoji, title))
+	builder.WriteString(fmt.Sprintf("💰Harga menyentuh: %.3f (target: %.3f)\n", triggerPrice, targetPrice))
+	builder.WriteString(fmt.Sprintf("🗓️ %s\n", utils.PrettyDate(utils.TimeNowWIB())))
 	return builder.String()
 }
