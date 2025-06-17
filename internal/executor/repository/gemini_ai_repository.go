@@ -16,8 +16,8 @@ import (
 	"golang-stock-scryper/pkg/logger"
 	"golang-stock-scryper/pkg/ratelimit"
 
-	"github.com/pkoukk/tiktoken-go"
 	"golang.org/x/time/rate"
+	"google.golang.org/genai"
 )
 
 // geminiAIRepository is an implementation of NewsAnalyzerRepository that uses the Google Gemini API.
@@ -27,18 +27,13 @@ type geminiAIRepository struct {
 	logger         *logger.Logger
 	tokenLimiter   *ratelimit.TokenLimiter
 	requestLimiter *rate.Limiter
-	tokenCounter   *tiktoken.Tiktoken
+	genAiClient    *genai.Client
 }
 
 // NewGeminiAIRepository creates a new instance of geminiAIRepository.
-func NewGeminiAIRepository(cfg *config.Config, log *logger.Logger) (GeminiAIRepository, error) {
+func NewGeminiAIRepository(cfg *config.Config, log *logger.Logger, genAiClient *genai.Client) (GeminiAIRepository, error) {
 	secondsPerRequest := time.Minute / time.Duration(cfg.Gemini.MaxRequestPerMinute)
 	requestLimiter := rate.NewLimiter(rate.Every(secondsPerRequest), 1)
-	enc, err := tiktoken.EncodingForModel("gpt-3.5-turbo")
-	if err != nil {
-		log.Fatal("Failed to get encoding for model", logger.ErrorField(err))
-		return nil, err
-	}
 
 	tokenLimiter := ratelimit.NewTokenLimiter(cfg.Gemini.MaxTokenPerMinute)
 
@@ -50,7 +45,7 @@ func NewGeminiAIRepository(cfg *config.Config, log *logger.Logger) (GeminiAIRepo
 		logger:         log,
 		requestLimiter: requestLimiter,
 		tokenLimiter:   tokenLimiter,
-		tokenCounter:   enc,
+		genAiClient:    genAiClient,
 	}, nil
 }
 
@@ -79,12 +74,25 @@ func (r *geminiAIRepository) GenerateNewsSummary(ctx context.Context, stockCode 
 }
 
 func (r *geminiAIRepository) executeGeminiAIRequest(ctx context.Context, prompt string) (*dto.GeminiAPIResponse, error) {
-	tokens := r.tokenCounter.Encode(prompt, nil, nil)
-	if err := r.tokenLimiter.Wait(ctx, len(tokens)); err != nil {
+	contents := []*genai.Content{
+		genai.NewContentFromText(prompt, "user"),
+	}
+	geminiTokenResp, err := r.genAiClient.Models.CountTokens(ctx, r.cfg.Gemini.Model, contents, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to count tokens: %w", err)
+	}
+
+	r.logger.Debug("Gemini token count", logger.IntField("total_tokens", int(geminiTokenResp.TotalTokens)))
+
+	if err := r.tokenLimiter.Wait(ctx, int(geminiTokenResp.TotalTokens)); err != nil {
 		return nil, fmt.Errorf("failed to wait for token limit: %w", err)
 	}
 	if err := r.requestLimiter.Wait(ctx); err != nil {
 		return nil, fmt.Errorf("failed to wait for request limit: %w", err)
+	}
+
+	if int(geminiTokenResp.TotalTokens) > r.cfg.Gemini.MaxTokenPerMinute/2 {
+		r.logger.Warn("Token has exceeded 50% of the limit", logger.IntField("remaining", r.tokenLimiter.GetRemaining()))
 	}
 
 	payload := dto.GeminiAPIRequest{

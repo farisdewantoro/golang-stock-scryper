@@ -20,6 +20,8 @@ import (
 	"golang-stock-scryper/pkg/redis"
 	"golang-stock-scryper/pkg/telegram"
 
+	"google.golang.org/genai"
+
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 )
@@ -105,7 +107,13 @@ func runServe(cmd *cobra.Command, args []string) {
 	var geminiRepo repository.GeminiAIRepository
 	switch cfg.AI.Provider {
 	case "gemini":
-		repo, err := repository.NewGeminiAIRepository(cfg, appLogger)
+		genAiClient, err := genai.NewClient(context.Background(), &genai.ClientConfig{
+			APIKey: cfg.Gemini.APIKey,
+		})
+		if err != nil {
+			appLogger.Fatal("Failed to initialize Gemini AI client", zap.Error(err))
+		}
+		repo, err := repository.NewGeminiAIRepository(cfg, appLogger, genAiClient)
 		if err != nil {
 			appLogger.Fatal("Failed to initialize Gemini AI repository", zap.Error(err))
 		}
