@@ -140,10 +140,16 @@ func (s *StockNewsSummaryStrategy) Execute(ctx context.Context, job *entity.Job)
 				if news.PublishedAt == nil {
 					continue
 				}
-				if news.PublishedAt.After(summary.SummaryStart) {
+				if summary.SummaryStart.IsZero() {
 					summary.SummaryStart = *news.PublishedAt
 				}
-				if news.PublishedAt.Before(summary.SummaryEnd) {
+				if summary.SummaryEnd.IsZero() {
+					summary.SummaryEnd = *news.PublishedAt
+				}
+				if news.PublishedAt.Before(summary.SummaryStart) {
+					summary.SummaryStart = *news.PublishedAt
+				}
+				if news.PublishedAt.After(summary.SummaryEnd) {
 					summary.SummaryEnd = *news.PublishedAt
 				}
 			}
