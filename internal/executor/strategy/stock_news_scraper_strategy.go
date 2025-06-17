@@ -29,12 +29,6 @@ import (
 	"gorm.io/gorm"
 )
 
-const (
-	SUCCESS = "success"
-	FAILED  = "failed"
-	SKIPPED = "skipped"
-)
-
 // StockNewsScraperStrategy defines the strategy for scraping stock news.
 type StockNewsScraperStrategy struct {
 	db               *gorm.DB
