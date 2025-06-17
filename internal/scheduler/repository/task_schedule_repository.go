@@ -65,7 +65,7 @@ func (r *taskScheduleRepository) Delete(ctx context.Context, id uint) error {
 func (r *taskScheduleRepository) FindJobsToSchedule(ctx context.Context) ([]entity.TaskSchedule, error) {
 	var schedules []entity.TaskSchedule
 	// Find jobs with active schedules that are due
-	err := r.db.WithContext(ctx).Debug().
+	err := r.db.WithContext(ctx).
 		Where("is_active = ? AND (next_execution IS NULL OR next_execution <= ?)", true, utils.TimeNowWIB()).
 		Find(&schedules).Error
 	if err != nil {
