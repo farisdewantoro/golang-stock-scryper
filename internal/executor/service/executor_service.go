@@ -119,11 +119,11 @@ func (s *executorService) executeAndUpdate(ctx context.Context, job *entity.Job,
 	} else {
 		output, err := strategy.Execute(ctx, job)
 		if err != nil {
-			s.logger.Error("Job execution failed", logger.ErrorField(err), logger.Field("job_id", job.ID))
+			s.logger.Error("Job execution failed", logger.ErrorField(err), logger.Field("job_id", job.ID), logger.IntField("history_id", int(history.ID)))
 			history.Status = entity.StatusFailed
 			history.ErrorMessage = sql.NullString{String: err.Error(), Valid: true}
 		} else {
-			s.logger.Info("Job executed successfully", logger.Field("job_id", job.ID))
+			s.logger.Info("Job executed successfully", logger.Field("job_id", job.ID), logger.IntField("history_id", int(history.ID)))
 			history.Status = entity.StatusCompleted
 		}
 		history.Output = sql.NullString{String: output, Valid: true}
@@ -135,4 +135,5 @@ func (s *executorService) executeAndUpdate(ctx context.Context, job *entity.Job,
 	if err := s.historyRepo.Update(ctx, history); err != nil {
 		s.logger.Error("Failed to update task history", logger.ErrorField(err), logger.Field("history_id", history.ID))
 	}
+	s.logger.Info("Job execution completed", logger.Field("job_id", job.ID), logger.IntField("history_id", int(history.ID)))
 }
