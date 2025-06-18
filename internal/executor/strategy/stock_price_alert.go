@@ -73,7 +73,7 @@ func (s *StockPriceAlertStrategy) Execute(ctx context.Context, job *entity.Job) 
 
 	var (
 		payload StockPriceAlertPayload
-		result  []StockPriceAlertResult
+		results []StockPriceAlertResult
 	)
 	if err := json.Unmarshal(job.Payload, &payload); err != nil {
 		s.logger.Error("Failed to unmarshal job payload", logger.ErrorField(err), logger.IntField("job_id", int(job.ID)))
@@ -103,6 +103,10 @@ func (s *StockPriceAlertStrategy) Execute(ctx context.Context, job *entity.Job) 
 
 	for _, stockPosition := range stockPositions {
 
+		resultData := StockPriceAlertResult{
+			StockCode: stockPosition.StockCode,
+		}
+
 		s.logger.DebugContext(ctx, "Processing stock alert", logger.StringField("stock_code", stockPosition.StockCode))
 		stockData, err := s.yahooFinanceRepository.Get(ctx, dto.GetStockDataParam{
 			StockCode: stockPosition.StockCode,
@@ -111,11 +115,9 @@ func (s *StockPriceAlertStrategy) Execute(ctx context.Context, job *entity.Job) 
 		})
 		if err != nil {
 			s.logger.Error("Failed to get stock data", logger.ErrorField(err), logger.StringField("stock_code", stockPosition.StockCode))
-			result = append(result, StockPriceAlertResult{
-				StockCode: stockPosition.StockCode,
-				Status:    FAILED,
-				Errors:    err.Error(),
-			})
+			resultData.Status = FAILED
+			resultData.Errors = err.Error()
+			results = append(results, resultData)
 			continue
 		}
 
@@ -177,31 +179,31 @@ func (s *StockPriceAlertStrategy) Execute(ctx context.Context, job *entity.Job) 
 
 		if reachTakeProfitIn > 0 || reachStopLossIn > 0 {
 			stockPosition.LastAlertedAt = utils.TimeNowWIB()
-			err = s.stockPositionsRepository.Update(ctx, stockPosition)
+			errSql := s.stockPositionsRepository.Update(ctx, stockPosition)
+			if errSql != nil {
+				s.logger.Error("Failed to update stock position", logger.ErrorField(errSql), logger.StringField("stock_code", stockPosition.StockCode))
+				resultData.Status = FAILED
+				resultData.Errors = errSql.Error()
+				results = append(results, resultData)
+			}
 		}
 
 		// set result
 		if err != nil {
 			s.logger.Error("Failed to send stock alert", logger.ErrorField(err), logger.StringField("stock_code", stockPosition.StockCode))
-			result = append(result, StockPriceAlertResult{
-				StockCode: stockPosition.StockCode,
-				Status:    FAILED,
-				Errors:    err.Error(),
-			})
+			resultData.Status = FAILED
+			resultData.Errors = err.Error()
+			results = append(results, resultData)
 		} else if reachTakeProfitIn > 0 || reachStopLossIn > 0 {
-			result = append(result, StockPriceAlertResult{
-				StockCode: stockPosition.StockCode,
-				Status:    SUCCESS,
-			})
+			resultData.Status = SUCCESS
+			results = append(results, resultData)
 		} else {
-			result = append(result, StockPriceAlertResult{
-				StockCode: stockPosition.StockCode,
-				Status:    SKIPPED,
-			})
+			resultData.Status = SKIPPED
+			results = append(results, resultData)
 		}
 	}
 
-	resultJSON, err := json.Marshal(result)
+	resultJSON, err := json.Marshal(results)
 	if err != nil {
 		return "", fmt.Errorf("failed to marshal results: %w", err)
 	}
@@ -219,6 +221,7 @@ func (s *StockPriceAlertStrategy) sendTelegramMessageAlert(ctx context.Context,
 	alertResendThresholdPercent float64) error {
 	ok, err := s.shouldTriggerAlert(ctx, stockPosition, triggerPrice, alertType, alertResendThresholdPercent)
 	if err != nil {
+		s.logger.Error("Failed to check alert", logger.ErrorField(err), logger.StringField("stock_code", stockPosition.StockCode))
 		return err
 	}
 	if !ok {
@@ -230,6 +233,8 @@ func (s *StockPriceAlertStrategy) sendTelegramMessageAlert(ctx context.Context,
 	if err != nil {
 		s.logger.Error("Failed to send alert", logger.ErrorField(err), logger.StringField("stock_code", stockPosition.StockCode))
 	}
+
+	s.logger.Debug("Send alert", logger.StringField("stock_code", stockPosition.StockCode), logger.StringField("alert_type", string(alertType)))
 
 	return s.redisClient.Set(ctx, fmt.Sprintf(REDIS_KEY_STOCK_PRICE_ALERT, alertType, stockPosition.StockCode), triggerPrice, cacheDuration).Err()
 }
