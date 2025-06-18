@@ -154,6 +154,7 @@ func runServe(cmd *cobra.Command, args []string) {
 			yahooFinanceRepo,
 			telegramNotifier,
 			stockPositionsRepo,
+			redisClient,
 		),
 	}
 
