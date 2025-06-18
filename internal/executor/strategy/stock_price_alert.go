@@ -125,11 +125,11 @@ func (s *StockPriceAlertStrategy) Execute(ctx context.Context, job *entity.Job) 
 		timestampLoss := int64(0)
 
 		// check if market price already reach take profit or stop loss
-		if stockData.MarketPrice != 0 && stockData.MarketPrice > stockPosition.TakeProfitPrice {
+		if stockData.MarketPrice != 0 && stockData.MarketPrice >= stockPosition.TakeProfitPrice {
 			reachTakeProfitIn = stockData.MarketPrice
 			timestampProfit = utils.TimeNowWIB().Unix()
 		}
-		if stockData.MarketPrice != 0 && stockData.MarketPrice < stockPosition.StopLossPrice {
+		if stockData.MarketPrice != 0 && stockData.MarketPrice <= stockPosition.StopLossPrice {
 			reachStopLossIn = stockData.MarketPrice
 			timestampLoss = utils.TimeNowWIB().Unix()
 		}
