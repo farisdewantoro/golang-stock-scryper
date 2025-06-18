@@ -242,11 +242,12 @@ func (s *StockPriceAlertStrategy) sendTelegramMessageAlert(ctx context.Context,
 
 func (s *StockPriceAlertStrategy) getLastAlertPrice(ctx context.Context, stockPosition *entity.StockPosition, alertType telegram.AlertType) (float64, error) {
 	lastAlertPrice, err := s.redisClient.Get(ctx, fmt.Sprintf(REDIS_KEY_STOCK_PRICE_ALERT, alertType, stockPosition.StockCode)).Result()
-	if err != nil {
-		return 0, err
-	}
-	if errors.Is(err, redis.Nil) {
+	if err != nil && errors.Is(err, redis.Nil) {
 		return 0, nil // belum pernah ada alert
+	}
+
+	if err != nil && !errors.Is(err, redis.Nil) {
+		return 0, err
 	}
 
 	return strconv.ParseFloat(lastAlertPrice, 64)
