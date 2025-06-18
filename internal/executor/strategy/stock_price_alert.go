@@ -3,6 +3,7 @@ package strategy
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"golang-stock-scryper/internal/entity"
 	"golang-stock-scryper/internal/executor/dto"
@@ -244,10 +245,8 @@ func (s *StockPriceAlertStrategy) getLastAlertPrice(ctx context.Context, stockPo
 	if err != nil {
 		return 0, err
 	}
-	if err == redis.Nil {
+	if errors.Is(err, redis.Nil) {
 		return 0, nil // belum pernah ada alert
-	} else if err != nil {
-		return 0, err
 	}
 
 	return strconv.ParseFloat(lastAlertPrice, 64)
