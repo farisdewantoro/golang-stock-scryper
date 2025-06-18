@@ -127,16 +127,6 @@ func (s *StockPriceAlertStrategy) Execute(ctx context.Context, job *entity.Job) 
 		timestampProfit := int64(0)
 		timestampLoss := int64(0)
 
-		// check if market price already reach take profit or stop loss
-		if stockData.MarketPrice != 0 && stockData.MarketPrice >= stockPosition.TakeProfitPrice {
-			reachTakeProfitIn = stockData.MarketPrice
-			timestampProfit = utils.TimeNowWIB().Unix()
-		}
-		if stockData.MarketPrice != 0 && stockData.MarketPrice <= stockPosition.StopLossPrice {
-			reachStopLossIn = stockData.MarketPrice
-			timestampLoss = utils.TimeNowWIB().Unix()
-		}
-
 		// check if historical price already reach take profit or stop loss
 		for _, stockDataPoint := range stockData.OHLCV {
 			if stockDataPoint.Timestamp < alertTriggerWindowTime.Unix() {
@@ -151,6 +141,16 @@ func (s *StockPriceAlertStrategy) Execute(ctx context.Context, job *entity.Job) 
 				reachStopLossIn = stockDataPoint.Low
 				timestampLoss = stockDataPoint.Timestamp
 			}
+		}
+
+		// check if market price already reach take profit or stop loss
+		if stockData.MarketPrice != 0 && stockData.MarketPrice >= stockPosition.TakeProfitPrice {
+			reachTakeProfitIn = stockData.MarketPrice
+			timestampProfit = utils.TimeNowWIB().Unix()
+		}
+		if stockData.MarketPrice != 0 && stockData.MarketPrice <= stockPosition.StopLossPrice {
+			reachStopLossIn = stockData.MarketPrice
+			timestampLoss = utils.TimeNowWIB().Unix()
 		}
 
 		if reachTakeProfitIn > 0 {
