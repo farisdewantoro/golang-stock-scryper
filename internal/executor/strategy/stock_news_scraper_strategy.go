@@ -233,14 +233,15 @@ func (s *StockNewsScraperStrategy) filterExistingNewsItems(ctx context.Context, 
 	var filteredItems []*gofeed.Item
 	for hash, item := range hashMap {
 		if existingHashes[hash] {
+			s.logger.Info("News already exists", logger.StringField("rss", item.Link), logger.StringField("hash", hash))
 			continue
 		}
 
 		if item.PublishedParsed == nil {
+			s.logger.Info("News published date is nil", logger.StringField("rss", item.Link))
 			continue
 		}
-
-		if item.PublishedParsed.Before(now.Add(-time.Duration(maxNewsAgeInDays*24) * time.Hour)) {
+		if item.PublishedParsed.In(utils.GetWibTimeLocation()).Before(now.Add(-time.Duration(maxNewsAgeInDays*24) * time.Hour)) {
 			continue
 		}
 

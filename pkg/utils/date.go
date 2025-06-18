@@ -6,12 +6,16 @@ import (
 	"time"
 )
 
-func TimeNowWIB() time.Time {
+func GetWibTimeLocation() *time.Location {
 	loc, err := time.LoadLocation("Asia/Jakarta")
 	if err != nil {
 		log.Fatal("Failed to load location", err)
 	}
-	return time.Now().In(loc)
+	return loc
+}
+
+func TimeNowWIB() time.Time {
+	return time.Now().In(GetWibTimeLocation())
 }
 
 func GetNowWithOnlyHour() time.Time {
