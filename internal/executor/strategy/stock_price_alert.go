@@ -96,7 +96,7 @@ func (s *StockPriceAlertStrategy) Execute(ctx context.Context, job *entity.Job) 
 	alertTriggerWindowTime := utils.TimeNowWIB().Add(-alertTriggerWindowDuration)
 
 	stockPositions, err := s.stockPositionsRepository.Get(ctx, dto.GetStockPositionsParam{
-		IsAlertTriggered: utils.ToPointer(true),
+		PriceAlert: utils.ToPointer(true),
 	})
 	if err != nil {
 		return FAILED, err
@@ -179,7 +179,7 @@ func (s *StockPriceAlertStrategy) Execute(ctx context.Context, job *entity.Job) 
 		}
 
 		if reachTakeProfitIn > 0 || reachStopLossIn > 0 {
-			stockPosition.LastAlertedAt = utils.TimeNowWIB()
+			stockPosition.LastPriceAlertAt = utils.ToPointer(utils.TimeNowWIB())
 			errSql := s.stockPositionsRepository.Update(ctx, stockPosition)
 			if errSql != nil {
 				s.logger.Error("Failed to update stock position", logger.ErrorField(errSql), logger.StringField("stock_code", stockPosition.StockCode))
@@ -230,7 +230,7 @@ func (s *StockPriceAlertStrategy) sendTelegramMessageAlert(ctx context.Context,
 	}
 
 	message := telegram.FormatStockAlertResultForTelegram(alertType, stockPosition.StockCode, triggerPrice, targetPrice, timestamp)
-	err = s.telegramNotifier.SendMessage(message)
+	err = s.telegramNotifier.SendMessageUser(message, stockPosition.User.TelegramID)
 	if err != nil {
 		s.logger.Error("Failed to send alert", logger.ErrorField(err), logger.StringField("stock_code", stockPosition.StockCode))
 	}

@@ -7,6 +7,7 @@ import (
 // Notifier defines the interface for a Telegram notifier.
 type Notifier interface {
 	SendMessage(text string) error
+	SendMessageUser(text string, chatID int64) error
 }
 
 // client is an implementation of Notifier.
@@ -30,6 +31,14 @@ func NewClient(botToken string, chatID int64) (Notifier, error) {
 // SendMessage sends a message to the configured Telegram chat.
 func (c *client) SendMessage(text string) error {
 	msg := tgbotapi.NewMessage(c.chatID, text)
+	msg.ParseMode = tgbotapi.ModeMarkdown // Using Markdown for formatting
+	_, err := c.bot.Send(msg)
+	return err
+}
+
+// SendMessageUser sends a message to user
+func (c *client) SendMessageUser(text string, chatID int64) error {
+	msg := tgbotapi.NewMessage(chatID, text)
 	msg.ParseMode = tgbotapi.ModeMarkdown // Using Markdown for formatting
 	_, err := c.bot.Send(msg)
 	return err

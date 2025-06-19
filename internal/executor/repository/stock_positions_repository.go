@@ -30,9 +30,9 @@ func (r *stockPositionsRepository) Get(ctx context.Context, param dto.GetStockPo
 
 	qFilter := []string{}
 	qFilterParam := []interface{}{}
-	if param.IsAlertTriggered != nil {
-		qFilter = append(qFilter, "is_alert_triggered = ?")
-		qFilterParam = append(qFilterParam, *param.IsAlertTriggered)
+	if param.PriceAlert != nil {
+		qFilter = append(qFilter, "price_alert = ?")
+		qFilterParam = append(qFilterParam, *param.PriceAlert)
 	}
 
 	if len(qFilter) == 0 {
@@ -44,7 +44,7 @@ func (r *stockPositionsRepository) Get(ctx context.Context, param dto.GetStockPo
 		qFilterParam = append(qFilterParam, param.StockCodes)
 	}
 
-	if err := r.db.WithContext(ctx).Where(strings.Join(qFilter, " AND "), qFilterParam...).Find(&stockPositions).Error; err != nil {
+	if err := r.db.WithContext(ctx).Preload("User").Where(strings.Join(qFilter, " AND "), qFilterParam...).Find(&stockPositions).Error; err != nil {
 		return nil, err
 	}
 
