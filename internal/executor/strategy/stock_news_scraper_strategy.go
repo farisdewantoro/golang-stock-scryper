@@ -39,10 +39,11 @@ type StockNewsScraperStrategy struct {
 	stockNewsRepo    repository.StockNewsRepository
 	client           *http.Client
 	inmemoryCache    *cache.Cache
+	stockRepo        repository.StocksRepository
 }
 
 // NewStockNewsScraperStrategy creates a new instance of StockNewsScraperStrategy.
-func NewStockNewsScraperStrategy(db *gorm.DB, logger *logger.Logger, decoder *decoder.GoogleDecoder, analyzerRepo repository.NewsAnalyzerRepository, stockMentionRepo repository.StockMentionRepository, stockNewsRepo repository.StockNewsRepository) *StockNewsScraperStrategy {
+func NewStockNewsScraperStrategy(db *gorm.DB, logger *logger.Logger, decoder *decoder.GoogleDecoder, analyzerRepo repository.NewsAnalyzerRepository, stockMentionRepo repository.StockMentionRepository, stockNewsRepo repository.StockNewsRepository, stockRepo repository.StocksRepository) *StockNewsScraperStrategy {
 	return &StockNewsScraperStrategy{
 		db:               db,
 		logger:           logger,
@@ -52,6 +53,7 @@ func NewStockNewsScraperStrategy(db *gorm.DB, logger *logger.Logger, decoder *de
 		stockNewsRepo:    stockNewsRepo,
 		client:           &http.Client{},
 		inmemoryCache:    cache.New(5*time.Minute, 10*time.Minute),
+		stockRepo:        stockRepo,
 	}
 }
 
@@ -74,6 +76,7 @@ type StockNewsScraperPayload struct {
 	MaxNews            int      `json:"max_news"`
 	MaxNewsAgeInDays   int      `json:"max_news_age_in_days"`
 	BlackListedDomains []string `json:"blacklisted_domains"`
+	MaxConcurrent      int      `json:"max_concurrent"`
 }
 
 func (s *StockNewsScraperStrategy) Execute(ctx context.Context, job *entity.Job) (string, error) {
@@ -86,11 +89,30 @@ func (s *StockNewsScraperStrategy) Execute(ctx context.Context, job *entity.Job)
 	var wg sync.WaitGroup
 	var mu sync.Mutex
 
+	if len(payload.StockCodes) == 0 {
+		stocks, err := s.stockRepo.GetStocks(ctx)
+		if err != nil {
+			s.logger.Error("Failed to get stocks", logger.ErrorField(err))
+			return "", fmt.Errorf("failed to get stocks: %w", err)
+		}
+		for _, stock := range stocks {
+			payload.StockCodes = append(payload.StockCodes, stock.Code)
+		}
+	}
+
+	semaphore := make(chan struct{}, payload.MaxConcurrent)
+
 	for _, stockCode := range payload.StockCodes {
+		if !utils.ShouldContinue(ctx, s.logger) {
+			break
+		}
 		wg.Add(1)
 		code := stockCode
 		utils.GoSafe(func() {
 			defer wg.Done()
+			semaphore <- struct{}{}
+			defer func() { <-semaphore }()
+
 			scrapeResultData := scrapeResult{
 				FailedLinks: []string{},
 				StockCode:   code,
@@ -135,11 +157,9 @@ func (s *StockNewsScraperStrategy) Execute(ctx context.Context, job *entity.Job)
 
 			countSuccess := 0
 			for _, item := range filteredItems {
-				select {
-				case <-ctx.Done():
-					s.logger.Info("Context cancelled, stopping news processing for stock", logger.StringField("stock_code", code))
+
+				if !utils.ShouldContinue(ctx, s.logger) {
 					return
-				default:
 				}
 
 				s.logger.Info("Processing news item",

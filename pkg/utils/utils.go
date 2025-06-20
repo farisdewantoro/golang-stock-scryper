@@ -2,8 +2,12 @@ package utils
 
 import (
 	"bytes"
+	"context"
+	"golang-stock-scryper/pkg/logger"
 	"html"
 	"log"
+	"runtime"
+	"strings"
 	"unicode/utf8"
 )
 
@@ -50,4 +54,28 @@ func GoSafe(fn func()) {
 
 func ToPointer[T any](value T) *T {
 	return &value
+}
+
+func ShouldContinue(ctx context.Context, log *logger.Logger) bool {
+	select {
+	case <-ctx.Done():
+		// Dapatkan nama fungsi caller
+		pc, _, _, ok := runtime.Caller(1)
+		funcName := "unknown"
+		if ok {
+			fn := runtime.FuncForPC(pc)
+			if fn != nil {
+				// Ambil hanya nama fungsi (tanpa path lengkap)
+				parts := strings.Split(fn.Name(), "/")
+				funcName = parts[len(parts)-1]
+			}
+		}
+
+		log.Warn("Context cancelled",
+			logger.StringField("caller", funcName),
+		)
+		return false
+	default:
+		return true
+	}
 }
