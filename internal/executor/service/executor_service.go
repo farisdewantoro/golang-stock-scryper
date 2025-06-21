@@ -8,10 +8,12 @@ import (
 	"time"
 
 	"golang-stock-scryper/internal/entity"
+	"golang-stock-scryper/internal/executor/config"
 	"golang-stock-scryper/internal/executor/repository"
 	"golang-stock-scryper/internal/executor/strategy"
 	"golang-stock-scryper/pkg/common"
 	"golang-stock-scryper/pkg/logger"
+	"golang-stock-scryper/pkg/utils"
 
 	"github.com/redis/go-redis/v9"
 )
@@ -21,8 +23,19 @@ type ExecutorService interface {
 	ProcessTask(ctx context.Context)
 }
 
+type executorService struct {
+	cfg                *config.Config
+	redisClient        *redis.Client
+	jobRepo            repository.JobRepository
+	historyRepo        repository.TaskExecutionHistoryRepository
+	logger             *logger.Logger
+	executorStrategies map[entity.JobType]strategy.JobExecutionStrategy
+	semaphore          chan struct{}
+}
+
 // NewExecutorService creates a new ExecutorService.
 func NewExecutorService(
+	cfg *config.Config,
 	redisClient *redis.Client,
 	jobRepo repository.JobRepository,
 	historyRepo repository.TaskExecutionHistoryRepository,
@@ -35,20 +48,14 @@ func NewExecutorService(
 	}
 
 	return &executorService{
+		cfg:                cfg,
 		redisClient:        redisClient,
 		jobRepo:            jobRepo,
 		historyRepo:        historyRepo,
 		logger:             log,
 		executorStrategies: strategyMap,
+		semaphore:          make(chan struct{}, cfg.Executor.MaxConcurrentTasks),
 	}
-}
-
-type executorService struct {
-	redisClient        *redis.Client
-	jobRepo            repository.JobRepository
-	historyRepo        repository.TaskExecutionHistoryRepository
-	logger             *logger.Logger
-	executorStrategies map[entity.JobType]strategy.JobExecutionStrategy
 }
 
 // ProcessTask dequeues and executes a single task.
@@ -87,10 +94,7 @@ func (s *executorService) ProcessTask(ctx context.Context) {
 	var taskHistory entity.TaskExecutionHistory
 	if err := json.Unmarshal([]byte(taskData), &taskHistory); err != nil {
 		s.logger.Error("Failed to unmarshal task data", logger.ErrorField(err), logger.Field("message_id", message.ID))
-		// Acknowledge the message to prevent reprocessing of a malformed message.
-		if err := s.redisClient.XAck(ctx, common.SchedulerTaskExecutionEventName, common.RedisStreamGroup, message.ID).Err(); err != nil {
-			s.logger.Error("Failed to acknowledge malformed message", logger.ErrorField(err), logger.Field("message_id", message.ID))
-		}
+
 		return
 	}
 
@@ -102,10 +106,15 @@ func (s *executorService) ProcessTask(ctx context.Context) {
 		return
 	}
 
-	executionCtx, cancelExec := context.WithTimeout(ctx, time.Duration(job.Timeout)*time.Second)
-	defer cancelExec()
+	utils.GoSafe(func() {
+		s.semaphore <- struct{}{}
+		defer func() { <-s.semaphore }()
+		executionCtx, cancelExec := context.WithTimeout(ctx, time.Duration(job.Timeout)*time.Second)
+		defer cancelExec()
 
-	s.executeAndUpdate(executionCtx, job, &taskHistory)
+		s.executeAndUpdate(executionCtx, job, &taskHistory)
+
+	})
 
 }
 

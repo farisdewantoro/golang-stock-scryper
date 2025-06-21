@@ -173,7 +173,7 @@ func runServe(cmd *cobra.Command, args []string) {
 	}
 
 	// Initialize executor service
-	executorSvc := service.NewExecutorService(redisClient.Client, jobRepo, historyRepo, appLogger, strategies)
+	executorSvc := service.NewExecutorService(cfg, redisClient.Client, jobRepo, historyRepo, appLogger, strategies)
 
 	// Initialize and start the Redis consumer
 	redisConsumer := consumer.NewRedisConsumer(redisClient.Client, executorSvc, appLogger)
