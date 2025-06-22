@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"sync"
-	"time"
 
 	"golang-stock-scryper/internal/entity"
 	"golang-stock-scryper/internal/executor/dto"
@@ -68,10 +67,10 @@ func (s *StockNewsSummaryStrategy) Execute(ctx context.Context, job *entity.Job)
 
 	// var results []scrapeResult
 	var (
-		wg              sync.WaitGroup
-		mu              sync.Mutex
-		results         []dto.ExecutorSummaryResult
-		telegramResults []dto.NewsSummaryTelegramResult
+		wg      sync.WaitGroup
+		mu      sync.Mutex
+		results []dto.ExecutorSummaryResult
+		// telegramResults []dto.NewsSummaryTelegramResult
 	)
 
 	for _, stockCode := range payload.StockCodes {
@@ -173,26 +172,26 @@ func (s *StockNewsSummaryStrategy) Execute(ctx context.Context, job *entity.Job)
 				StockCode: code,
 				IsSuccess: true,
 			})
-			telegramResults = append(telegramResults, dto.NewsSummaryTelegramResult{
-				StockCode:       code,
-				ShortSummary:    summaryResult.ShortSummary,
-				Action:          summaryResult.SuggestedAction,
-				Sentiment:       summaryResult.SummarySentiment,
-				ConfidenceScore: summaryResult.SummaryConfidenceScore,
-			})
+			// telegramResults = append(telegramResults, dto.NewsSummaryTelegramResult{
+			// 	StockCode:       code,
+			// 	ShortSummary:    summaryResult.ShortSummary,
+			// 	Action:          summaryResult.SuggestedAction,
+			// 	Sentiment:       summaryResult.SummarySentiment,
+			// 	ConfidenceScore: summaryResult.SummaryConfidenceScore,
+			// })
 			mu.Unlock()
 		})
 	}
 	wg.Wait()
 
-	messages := telegram.FormatNewsSummariesForTelegram(telegramResults)
+	// messages := telegram.FormatNewsSummariesForTelegram(telegramResults)
 
-	for _, message := range messages {
-		if err := s.telegramNotifier.SendMessage(message); err != nil {
-			s.logger.Error("Failed to send Telegram notification", logger.ErrorField(err))
-		}
-		time.Sleep(100 * time.Millisecond) // supaya tidak lebih dari 20 msg/detik
-	}
+	// for _, message := range messages {
+	// 	if err := s.telegramNotifier.SendMessage(message); err != nil {
+	// 		s.logger.Error("Failed to send Telegram notification", logger.ErrorField(err))
+	// 	}
+	// 	time.Sleep(100 * time.Millisecond) // supaya tidak lebih dari 20 msg/detik
+	// }
 
 	resultJSON, err := json.Marshal(results)
 	if err != nil {
