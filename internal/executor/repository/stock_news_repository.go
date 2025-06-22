@@ -98,6 +98,9 @@ func (r *stockNewsRepository) CreateIgnoreConflict(ctx context.Context, stockNew
 			return nil
 		}
 
+		if len(stockMentions) == 0 {
+			return nil
+		}
 		for i := range stockMentions {
 			stockMentions[i].StockNewsID = stockNews.ID
 		}

@@ -82,7 +82,7 @@ func (r *geminiAIRepository) executeGeminiAIRequest(ctx context.Context, prompt 
 		return nil, fmt.Errorf("failed to count tokens: %w", err)
 	}
 
-	r.logger.Debug("Gemini token count", logger.IntField("total_tokens", int(geminiTokenResp.TotalTokens)))
+	r.logger.Debug("Gemini token count", logger.IntField("total_tokens", int(geminiTokenResp.TotalTokens)), logger.StringField("prompt", prompt))
 
 	if err := r.tokenLimiter.Wait(ctx, int(geminiTokenResp.TotalTokens)); err != nil {
 		return nil, fmt.Errorf("failed to wait for token limit: %w", err)
