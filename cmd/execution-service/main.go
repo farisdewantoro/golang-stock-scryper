@@ -164,6 +164,7 @@ func runServe(cmd *cobra.Command, args []string) {
 		summaryStrategy := strategy.NewStockNewsSummaryStrategy(
 			db.DB,
 			appLogger,
+			stocksRepo,
 			stockNewsRepo,
 			stockNewsSummaryRepo,
 			geminiRepo,

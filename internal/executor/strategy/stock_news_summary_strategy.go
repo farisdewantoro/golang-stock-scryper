@@ -20,6 +20,7 @@ import (
 type StockNewsSummaryStrategy struct {
 	db                   *gorm.DB
 	logger               *logger.Logger
+	stockRepo            repository.StocksRepository
 	stockNewsRepo        repository.StockNewsRepository
 	stockNewsSummaryRepo repository.StockNewsSummaryRepository
 	geminiRepo           repository.GeminiAIRepository
@@ -30,6 +31,7 @@ type StockNewsSummaryStrategy struct {
 func NewStockNewsSummaryStrategy(
 	db *gorm.DB,
 	logger *logger.Logger,
+	stockRepo repository.StocksRepository,
 	stockNewsRepo repository.StockNewsRepository,
 	stockNewsSummaryRepo repository.StockNewsSummaryRepository,
 	geminiRepo repository.GeminiAIRepository,
@@ -38,6 +40,7 @@ func NewStockNewsSummaryStrategy(
 	return &StockNewsSummaryStrategy{
 		db:                   db,
 		logger:               logger,
+		stockRepo:            stockRepo,
 		stockNewsRepo:        stockNewsRepo,
 		stockNewsSummaryRepo: stockNewsSummaryRepo,
 		geminiRepo:           geminiRepo,
@@ -52,7 +55,6 @@ func (s *StockNewsSummaryStrategy) GetType() entity.JobType {
 
 // StockNewsSummaryPayload defines the payload for the stock news summary job.
 type StockNewsSummaryPayload struct {
-	StockCodes         []string `json:"stock_codes"`
 	MaxNews            int      `json:"max_news"`
 	MaxNewsAgeInDays   int      `json:"max_news_age_in_days"`
 	PriorityDomainList []string `json:"priority_domain_list"`
@@ -73,9 +75,15 @@ func (s *StockNewsSummaryStrategy) Execute(ctx context.Context, job *entity.Job)
 		// telegramResults []dto.NewsSummaryTelegramResult
 	)
 
-	for _, stockCode := range payload.StockCodes {
+	stocks, err := s.stockRepo.GetStocks(ctx)
+	if err != nil {
+		s.logger.Error("Failed to get stocks", logger.ErrorField(err))
+		return "", fmt.Errorf("failed to get stocks: %w", err)
+	}
+
+	for _, stock := range stocks {
 		wg.Add(1)
-		code := stockCode
+		code := stock.Code
 		utils.GoSafe(func() {
 			defer wg.Done()
 			s.logger.Info("Executing stock news summary job", logger.StringField("stock_code", code))
