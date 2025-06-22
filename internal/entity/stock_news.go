@@ -24,10 +24,12 @@ type StockNews struct {
 	StockMentions  []StockMention `gorm:"foreignKey:StockNewsID" json:"stock_mentions"`
 
 	// Fields populated by custom query for ranking
+	StockCode       string  `gorm:"-" json:"stock_code,omitempty"`
 	Sentiment       string  `gorm:"-" json:"sentiment,omitempty"`
 	Impact          string  `gorm:"-" json:"impact,omitempty"`
 	ConfidenceScore float64 `gorm:"-" json:"confidence_score,omitempty"`
 	Reason          string  `gorm:"-" json:"reason,omitempty"`
+	FinalScore      float64 `gorm:"-" json:"final_score,omitempty"`
 }
 
 // TableName specifies the table name for the StockNews model.

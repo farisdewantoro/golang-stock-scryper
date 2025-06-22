@@ -36,32 +36,37 @@ func (r *stockNewsRepository) Create(ctx context.Context, stockNews *entity.Stoc
 }
 
 func (r *stockNewsRepository) FindRankedNews(ctx context.Context, stockCode string, maxNews int, maxNewsAgeInDays int, priorityDomains []string) ([]entity.StockNews, error) {
-
 	var (
 		qBuilder strings.Builder
-		news     []entity.StockNews
 		qParam   = []interface{}{}
 	)
 
 	qBuilder.WriteString(fmt.Sprintf(`
-	SELECT 
+	SELECT
 		sn.id,
 		sn.title,
 		sn.link,
 		sn.published_at,
+		sn.raw_content,
+		sn.summary,
+		sn.hash_identifier,
 		sn.source,
-		sm.sentiment,
+		sn.google_rss_link,
+		sn.impact_score,
+		sn.key_issue,
+		sn.created_at,
+		sn.updated_at,
 		sm.reason,
+		sm.stock_code,
+		sm.sentiment,
 		sm.impact,
 		sm.confidence_score,
-		sn.impact_score,
-		GREATEST(0, 1 - (EXTRACT(EPOCH FROM (NOW() - sn.published_at)) / 86400) / %.2f) AS recency_score,
-		(0.5 * sm.confidence_score + 0.3 * sn.impact_score + 0.2 * GREATEST(0, 1 - (EXTRACT(EPOCH FROM (NOW() - sn.published_at)) / 86400) / %.2f)) AS final_score
+		(0.5 * sm.confidence_score + 0.3 * sn.impact_score + 0.2 * GREATEST(0, 1 - (EXTRACT(EPOCH FROM (NOW() - sn.published_at)) / 86400) / %d)) AS final_score
 	FROM stock_news AS sn
 	JOIN stock_mentions AS sm ON sm.stock_news_id = sn.id
 	WHERE sm.stock_code = ?
 	AND sn.published_at >= NOW() - INTERVAL '%d days'
-`, float64(maxNewsAgeInDays), float64(maxNewsAgeInDays), maxNewsAgeInDays))
+`, maxNewsAgeInDays, maxNewsAgeInDays))
 
 	qParam = append(qParam, stockCode)
 	if len(priorityDomains) > 0 {
@@ -70,15 +75,38 @@ func (r *stockNewsRepository) FindRankedNews(ctx context.Context, stockCode stri
 	} else {
 		qBuilder.WriteString(" ORDER BY final_score DESC")
 	}
+
 	qBuilder.WriteString(" LIMIT ?")
 	qParam = append(qParam, maxNews)
 
-	err := r.db.WithContext(ctx).Raw(qBuilder.String(), qParam...).Scan(&news).Error
+	type scanResult struct {
+		entity.StockNews
+		StockCode       string  `gorm:"column:stock_code"`
+		Sentiment       string  `gorm:"column:sentiment"`
+		Impact          string  `gorm:"column:impact"`
+		ConfidenceScore float64 `gorm:"column:confidence_score"`
+		FinalScore      float64 `gorm:"column:final_score"`
+		Reason          string  `gorm:"column:reason"`
+	}
+
+	var results []scanResult
+	err := r.db.Debug().WithContext(ctx).Raw(qBuilder.String(), qParam...).Scan(&results).Error
 	if err != nil {
 		log.Fatal("Query error: ", err)
 	}
 
-	return news, err
+	news := make([]entity.StockNews, len(results))
+	for i, r := range results {
+		news[i] = r.StockNews
+		news[i].StockCode = r.StockCode
+		news[i].Sentiment = r.Sentiment
+		news[i].Impact = r.Impact
+		news[i].ConfidenceScore = r.ConfidenceScore
+		news[i].FinalScore = r.FinalScore
+		news[i].Reason = r.Reason
+	}
+
+	return news, nil
 }
 
 func (r *stockNewsRepository) CreateIgnoreConflict(ctx context.Context, stockNews *entity.StockNews) error {
