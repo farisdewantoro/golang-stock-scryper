@@ -171,6 +171,11 @@ Kriteria analisis:
 - News Impact Score: nilai antara 0.0 (sangat tidak berdampak / tidak berkualitas) hingga 1.0 (sangat berdampak / berkualitas)
 - News Summary: ringkasan singkat dari berita tersebut
 - News Key Issue: array dari isu-isu penting yang terkait dengan berita tersebut ('dividen', 'laporan keuangan', 'analisa', 'dan key issue lainnya (kamu define sendiri)')
+- News Reason: alasan mengapa berita tersebut berdampak pada saham tersebut
+
+Catatan penting:
+- "reason" WAJIB diisi dan tidak boleh kosong.
+- Jika berita kurang berdampak langsung, buat inferensi logis dari konteks umum saham tersebut.
 
 Tolong analisa dan berikan output dalam format JSON dengan struktur berikut:
 {
@@ -182,10 +187,14 @@ Tolong analisa dan berikan output dalam format JSON dengan struktur berikut:
       "stock_code": "ANTM",
       "sentiment": "positive",
       "impact": "bullish",
-      "confidence_score": 0.88
+      "confidence_score": 0.88,
+	  "reason": "Penjelasan logis dan spesifik kenapa berita ini berdampak ke saham ini."
     }
   ]
 }
+
+
+
 
 Berikut Data News:
 Judul: %s
@@ -207,8 +216,8 @@ func (r *geminiAIRepository) buildSummarizeNewsPrompt(stockCode string, newsItem
 		}
 		// Each news item is formatted and appended to the builder
 		newsBuilder.WriteString(fmt.Sprintf(
-			"%d. Title: \"%s\"\n   Published At: %s\n   Summary: %s\n   Sentiment: %s\n   Impact: %s\n   Confidence Score: %.2f\n   Key Issues: %s\n\n",
-			i+1, news.Title, publishedAtStr, news.Summary, news.Sentiment, news.Impact, news.ConfidenceScore, string(keyIssuesJSON),
+			"%d. Title: \"%s\"\n   Published At: %s\n   Summary: %s\n   Sentiment: %s\n   Reason: %s\n   Impact: %s\n   Confidence Score: %.2f\n   Key Issues: %s\n\n",
+			i+1, news.Title, publishedAtStr, news.Summary, news.Sentiment, news.Reason, news.Impact, news.ConfidenceScore, string(keyIssuesJSON),
 		))
 	}
 

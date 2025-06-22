@@ -51,6 +51,7 @@ func (r *stockNewsRepository) FindRankedNews(ctx context.Context, stockCode stri
 		sn.published_at,
 		sn.source,
 		sm.sentiment,
+		sm.reason,
 		sm.impact,
 		sm.confidence_score,
 		sn.impact_score,

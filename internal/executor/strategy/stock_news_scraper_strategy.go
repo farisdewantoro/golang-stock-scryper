@@ -362,6 +362,7 @@ func (s *StockNewsScraperStrategy) processNewsItem(ctx context.Context, item *go
 			Sentiment:       stockMention.Sentiment,
 			ConfidenceScore: stockMention.ConfidenceScore,
 			Impact:          stockMention.Impact,
+			Reason:          stockMention.Reason,
 		})
 	}
 
