@@ -176,6 +176,7 @@ Kriteria analisis:
 Catatan penting:
 - "reason" WAJIB diisi dan tidak boleh kosong.
 - Jika berita kurang berdampak langsung, buat inferensi logis dari konteks umum saham tersebut.
+- Jika tidak berdampak sama sekali field stock_code pada array stock_mentions diisi dengan TIDAK_RELEVAN
 
 Tolong analisa dan berikan output dalam format JSON dengan struktur berikut:
 {
