@@ -141,6 +141,7 @@ func (s *StockNewsScraperStrategy) Execute(ctx context.Context, job *entity.Job)
 				Errors:      []string{},
 			}
 			url := fmt.Sprintf("https://news.google.com/rss%s", queryRSS)
+			s.logger.Info("Processing RSS feed", logger.StringField("url", url))
 			fp := gofeed.NewParser()
 			feed, err := fp.ParseURLWithContext(url, ctx)
 			if err != nil {
