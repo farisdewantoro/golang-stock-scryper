@@ -92,10 +92,7 @@ func (s *StockNewsScraperStrategy) Execute(ctx context.Context, job *entity.Job)
 
 	defaultQueryParam := "hl=id&gl=ID&ceid=ID:id"
 
-	queriesRSS := []string{
-		//default top news indonesia
-		fmt.Sprintf("?%s", defaultQueryParam),
-	}
+	queriesRSS := []string{}
 
 	stocks, err := s.stockRepo.GetStocks(ctx)
 	if err != nil {
