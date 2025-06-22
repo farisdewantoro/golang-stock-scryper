@@ -67,7 +67,7 @@ type scrapeResult struct {
 	Status      string   `json:"status"`
 	FailedLinks []string `json:"failed_links"`
 	Errors      []string `json:"errors"`
-	StockCode   string   `json:"stock_code"`
+	QueryRSS    string   `json:"query_rss"`
 }
 
 type StockNewsScraperPayload struct {
@@ -137,7 +137,7 @@ func (s *StockNewsScraperStrategy) Execute(ctx context.Context, job *entity.Job)
 
 			scrapeResultData := scrapeResult{
 				FailedLinks: []string{},
-				StockCode:   queryRSS,
+				QueryRSS:    queryRSS,
 				Errors:      []string{},
 			}
 			url := fmt.Sprintf("https://news.google.com/rss%s", queryRSS)
