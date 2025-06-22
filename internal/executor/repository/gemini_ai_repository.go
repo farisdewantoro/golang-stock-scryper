@@ -50,8 +50,8 @@ func NewGeminiAIRepository(cfg *config.Config, log *logger.Logger, genAiClient *
 }
 
 // Analyze performs news analysis using the Google Gemini API.
-func (r *geminiAIRepository) Analyze(ctx context.Context, stockCode, title, publishedDate, content string) (*dto.NewsAnalysisResult, error) {
-	prompt := r.buildAnalyzeNewsPrompt(stockCode, title, publishedDate, content)
+func (r *geminiAIRepository) Analyze(ctx context.Context, title, publishedDate, content string) (*dto.NewsAnalysisResult, error) {
+	prompt := r.buildAnalyzeNewsPrompt(title, publishedDate, content)
 
 	geminiResp, err := r.executeGeminiAIRequest(ctx, prompt)
 	if err != nil {
@@ -161,8 +161,8 @@ func (r *geminiAIRepository) parseSummaryResponse(resp *dto.GeminiAPIResponse) (
 	return &result, nil
 }
 
-func (r *geminiAIRepository) buildAnalyzeNewsPrompt(stockCode, title, publishedDate, content string) string {
-	return fmt.Sprintf(`Berikut adalah berita terkait saham yang saya dapatkan dari RSS feed ketika mencari saham %s. Tolong analisa dan berikan output dalam JSON seperti:
+func (r *geminiAIRepository) buildAnalyzeNewsPrompt(title, publishedDate, content string) string {
+	return fmt.Sprintf(`Anda adalah analis pasar modal Indonesia yang ahli dalam mengaitkan peristiwa berita dengan saham. Tolong analisa dan berikan output dalam JSON seperti:
 
 Kriteria analisis:
 - Sentimen: "positive", "neutral", atau "negative"
@@ -194,7 +194,7 @@ Raw Content: %s
 
 
 Jawaban hanya dalam format JSON saja.
-`, stockCode, title, publishedDate, content)
+`, title, publishedDate, content)
 }
 
 func (r *geminiAIRepository) buildSummarizeNewsPrompt(stockCode string, newsItems []entity.StockNews) string {

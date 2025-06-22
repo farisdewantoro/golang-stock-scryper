@@ -71,12 +71,13 @@ type scrapeResult struct {
 }
 
 type StockNewsScraperPayload struct {
-	StockCodes         []string `json:"stock_codes"`
-	DelayInterval      int      `json:"delay_interval"`
-	MaxNews            int      `json:"max_news"`
-	MaxNewsAgeInDays   int      `json:"max_news_age_in_days"`
-	BlackListedDomains []string `json:"blacklisted_domains"`
-	MaxConcurrent      int      `json:"max_concurrent"`
+	AdditionalStockCodes []string `json:"additional_stock_codes"`
+	DelayInterval        int      `json:"delay_interval"`
+	MaxNews              int      `json:"max_news"`
+	MaxNewsAgeInDays     int      `json:"max_news_age_in_days"`
+	BlackListedDomains   []string `json:"blacklisted_domains"`
+	MaxConcurrent        int      `json:"max_concurrent"`
+	AdditionalKeywords   []string `json:"additional_keywords"`
 }
 
 func (s *StockNewsScraperStrategy) Execute(ctx context.Context, job *entity.Job) (string, error) {
@@ -89,25 +90,46 @@ func (s *StockNewsScraperStrategy) Execute(ctx context.Context, job *entity.Job)
 	var wg sync.WaitGroup
 	var mu sync.Mutex
 
-	if len(payload.StockCodes) == 0 {
-		stocks, err := s.stockRepo.GetStocks(ctx)
-		if err != nil {
-			s.logger.Error("Failed to get stocks", logger.ErrorField(err))
-			return "", fmt.Errorf("failed to get stocks: %w", err)
+	defaultQueryParam := "hl=id&gl=ID&ceid=ID:id"
+
+	queriesRSS := []string{
+		//default top news indonesia
+		fmt.Sprintf("?%s", defaultQueryParam),
+	}
+
+	stocks, err := s.stockRepo.GetStocks(ctx)
+	if err != nil {
+		s.logger.Error("Failed to get stocks", logger.ErrorField(err))
+		return "", fmt.Errorf("failed to get stocks: %w", err)
+	}
+
+	for len(payload.AdditionalKeywords) > 0 {
+		for _, keyword := range payload.AdditionalKeywords {
+			if keyword == "" {
+				continue
+			}
+			//example /search?q=invest
+			queriesRSS = append(queriesRSS, fmt.Sprintf("%s&%s", keyword, defaultQueryParam))
 		}
-		for _, stock := range stocks {
-			payload.StockCodes = append(payload.StockCodes, stock.Code)
+	}
+
+	for _, stock := range stocks {
+		queriesRSS = append(queriesRSS, fmt.Sprintf("/search?q=saham+%s&%s", stock.Code, defaultQueryParam))
+	}
+
+	if len(payload.AdditionalStockCodes) > 0 {
+		for _, stockCode := range payload.AdditionalStockCodes {
+			queriesRSS = append(queriesRSS, fmt.Sprintf("/search?q=saham+%s&%s", stockCode, defaultQueryParam))
 		}
 	}
 
 	semaphore := make(chan struct{}, payload.MaxConcurrent)
 
-	for _, stockCode := range payload.StockCodes {
+	for _, queryRSS := range queriesRSS {
 		if !utils.ShouldContinue(ctx, s.logger) {
 			break
 		}
 		wg.Add(1)
-		code := stockCode
 		utils.GoSafe(func() {
 			defer wg.Done()
 			semaphore <- struct{}{}
@@ -115,14 +137,14 @@ func (s *StockNewsScraperStrategy) Execute(ctx context.Context, job *entity.Job)
 
 			scrapeResultData := scrapeResult{
 				FailedLinks: []string{},
-				StockCode:   code,
+				StockCode:   queryRSS,
 				Errors:      []string{},
 			}
-			url := fmt.Sprintf("https://news.google.com/rss/search?q=saham+%s&hl=id&gl=ID&ceid=ID:id", code)
+			url := fmt.Sprintf("https://news.google.com/rss%s", queryRSS)
 			fp := gofeed.NewParser()
 			feed, err := fp.ParseURLWithContext(url, ctx)
 			if err != nil {
-				s.logger.Error("Failed to parse RSS feed", logger.ErrorField(err), logger.StringField("stock_code", code))
+				s.logger.Error("Failed to parse RSS feed", logger.ErrorField(err), logger.StringField("query_rss", queryRSS))
 				scrapeResultData.Status = FAILED
 				scrapeResultData.Errors = append(scrapeResultData.Errors, err.Error())
 				mu.Lock()
@@ -141,7 +163,7 @@ func (s *StockNewsScraperStrategy) Execute(ctx context.Context, job *entity.Job)
 			// Filter out existing news items
 			filteredItems, err := s.filterExistingNewsItems(ctx, feed.Items, payload.MaxNewsAgeInDays)
 			if err != nil {
-				s.logger.Error("Failed to filter existing news items", logger.ErrorField(err), logger.StringField("stock_code", code))
+				s.logger.Error("Failed to filter existing news items", logger.ErrorField(err), logger.StringField("query_rss", queryRSS))
 				scrapeResultData.Status = FAILED
 				scrapeResultData.Errors = append(scrapeResultData.Errors, err.Error())
 				mu.Lock()
@@ -152,7 +174,7 @@ func (s *StockNewsScraperStrategy) Execute(ctx context.Context, job *entity.Job)
 			s.logger.Info("Filtered news items",
 				logger.IntField("original_count", len(feed.Items)),
 				logger.IntField("filtered_count", len(filteredItems)),
-				logger.StringField("stock_code", code),
+				logger.StringField("query_rss", queryRSS),
 			)
 
 			countSuccess := 0
@@ -164,7 +186,7 @@ func (s *StockNewsScraperStrategy) Execute(ctx context.Context, job *entity.Job)
 
 				s.logger.Info("Processing news item",
 					logger.StringField("title", item.Title),
-					logger.StringField("stock_code", code),
+					logger.StringField("query_rss", queryRSS),
 					logger.IntField("count_success", countSuccess),
 					logger.IntField("count_total", len(feed.Items)),
 					logger.IntField("max_news", payload.MaxNews),
@@ -173,7 +195,7 @@ func (s *StockNewsScraperStrategy) Execute(ctx context.Context, job *entity.Job)
 					break
 				}
 
-				status, news, err := s.processNewsItem(ctx, item, code, payload)
+				status, news, err := s.processNewsItem(ctx, item, queryRSS, payload)
 				if err != nil {
 					scrapeResultData.FailedLinks = append(scrapeResultData.FailedLinks, news.Link)
 					scrapeResultData.Errors = append(scrapeResultData.Errors, err.Error())
@@ -271,7 +293,7 @@ func (s *StockNewsScraperStrategy) filterExistingNewsItems(ctx context.Context, 
 	return filteredItems, nil
 }
 
-func (s *StockNewsScraperStrategy) processNewsItem(ctx context.Context, item *gofeed.Item, stockCode string, payload StockNewsScraperPayload) (string, entity.StockNews, error) {
+func (s *StockNewsScraperStrategy) processNewsItem(ctx context.Context, item *gofeed.Item, queryRSS string, payload StockNewsScraperPayload) (string, entity.StockNews, error) {
 	decodeResult := s.decoder.DecodeGoogleNewsURL(item.Link, 0)
 	if !decodeResult.Status {
 		s.logger.Error("Failed to decode google rss link", logger.StringField("message", decodeResult.Message))
@@ -306,7 +328,7 @@ func (s *StockNewsScraperStrategy) processNewsItem(ctx context.Context, item *go
 	news.Source = parsedURL.Hostname()
 
 	if utils.ContainsString(payload.BlackListedDomains, parsedURL.Hostname()) {
-		s.logger.Warn("Skip news from blacklisted domain", logger.StringField("domain", parsedURL.Hostname()), logger.StringField("stock_code", stockCode))
+		s.logger.Warn("Skip news from blacklisted domain", logger.StringField("domain", parsedURL.Hostname()), logger.StringField("query_rss", queryRSS))
 		return SKIPPED, news, nil
 	}
 
@@ -319,7 +341,7 @@ func (s *StockNewsScraperStrategy) processNewsItem(ctx context.Context, item *go
 
 	var analysisResult *dto.NewsAnalysisResult
 
-	analysisResult, err = s.analyzerRepo.Analyze(ctx, stockCode, news.Title, publishedDateStr, news.RawContent)
+	analysisResult, err = s.analyzerRepo.Analyze(ctx, news.Title, publishedDateStr, news.RawContent)
 	if err != nil {
 		s.logger.Error("Failed to analyze news content", logger.ErrorField(err), logger.StringField("title", item.Title))
 		return FAILED, entity.StockNews{}, fmt.Errorf("failed to analyze news content: %w", err)

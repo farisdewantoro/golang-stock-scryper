@@ -33,8 +33,8 @@ func NewOpenRouterRepository(cfg *config.Config, logger *logger.Logger) NewsAnal
 }
 
 // Analyze performs news analysis using the OpenRouter API.
-func (r *openRouterRepository) Analyze(ctx context.Context, stockCode, title, publishedDate, content string) (*dto.NewsAnalysisResult, error) {
-	prompt := r.buildPrompt(stockCode, title, publishedDate, content)
+func (r *openRouterRepository) Analyze(ctx context.Context, title, publishedDate, content string) (*dto.NewsAnalysisResult, error) {
+	prompt := r.buildPrompt(title, publishedDate, content)
 
 	requestBody := map[string]interface{}{
 		"model": r.cfg.OpenRouter.Model, // A cost-effective and fast model
@@ -132,8 +132,8 @@ func (r *openRouterRepository) Analyze(ctx context.Context, stockCode, title, pu
 	return &result, nil
 }
 
-func (r *openRouterRepository) buildPrompt(stockCode, title, publishedDate, content string) string {
-	return fmt.Sprintf(`Berikut adalah berita terkait saham yang saya dapatkan dari RSS feed ketika mencari saham %s. Tolong analisa dan berikan output dalam JSON seperti:
+func (r *openRouterRepository) buildPrompt(title, publishedDate, content string) string {
+	return fmt.Sprintf(`Anda adalah analis pasar modal Indonesia yang ahli dalam mengaitkan peristiwa berita dengan saham. Tolong analisa dan berikan output dalam JSON seperti:
 
 Kriteria analisis:
 - Sentimen: "positive", "neutral", atau "negative"
@@ -165,5 +165,5 @@ Raw Content: %s
 
 
 Jawaban hanya dalam format JSON saja.
-`, stockCode, title, publishedDate, content)
+`, title, publishedDate, content)
 }
