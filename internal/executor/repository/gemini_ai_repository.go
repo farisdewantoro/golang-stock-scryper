@@ -185,7 +185,7 @@ Tolong analisa dan berikan output dalam format JSON dengan struktur berikut:
   "impact_score": 0.88,
   "stock_mentions":[
     {
-      "stock_code": "ANTM",
+      "stock_code": "ANTM | TIDAK_RELEVAN" ,
       "sentiment": "positive",
       "impact": "bullish",
       "confidence_score": 0.88,
