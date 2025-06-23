@@ -336,7 +336,6 @@ Anda adalah analis teknikal berpengalaman di pasar saham Indonesia. Tugas Anda a
 {
   "symbol": "%s",
   "analysis_date": "%s",
-  "max_holding_period_days": 3,
   "technical_analysis": {
     "trend": "BULLISH",
     "momentum": "STRONG",
@@ -345,12 +344,12 @@ Anda adalah analis teknikal berpengalaman di pasar saham Indonesia. Tugas Anda a
     "macd_signal": "BULLISH",
     "bollinger_bands_position": "UPPER",
     "support_level": 1420,
-    "resistance_level": 1615,,
+    "resistance_level": 1615,
 	"key_insights": [
       "Trend bullish dengan volume mendukung",
       "Support dan resistance teridentifikasi",
       "Risk/reward ratio layak untuk entry"
-    ]
+    ],
     "technical_score": 85
   },
   "recommendation": {

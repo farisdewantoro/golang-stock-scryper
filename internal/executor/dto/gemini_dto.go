@@ -40,27 +40,25 @@ type NewsSummaryResult struct {
 }
 
 type IndividualAnalysisResponse struct {
-	Symbol               string            `json:"symbol"`
-	AnalysisDate         time.Time         `json:"analysis_date"`
-	TechnicalAnalysis    TechnicalAnalysis `json:"technical_analysis"`
-	Recommendation       Recommendation    `json:"recommendation"`
-	RiskLevel            string            `json:"risk_level"`
-	MaxHoldingPeriodDays int               `json:"max_holding_period_days,omitempty"`
-	NewsSummary          NewsSummary       `json:"news_summary,omitempty"`
-	KeyInsights          []string          `json:"key_insights"`
+	Symbol            string            `json:"symbol"`
+	AnalysisDate      time.Time         `json:"analysis_date"`
+	TechnicalAnalysis TechnicalAnalysis `json:"technical_analysis"`
+	Recommendation    Recommendation    `json:"recommendation"`
+	NewsSummary       NewsSummary       `json:"news_summary,omitempty"`
 }
 
 // Technical Analysis
 type TechnicalAnalysis struct {
-	Trend                  string  `json:"trend"`
-	Momentum               string  `json:"momentum"`
-	EMASignal              string  `json:"ema_signal"`
-	RSISignal              string  `json:"rsi_signal"`
-	MACDSignal             string  `json:"macd_signal"`
-	StochasticSignal       string  `json:"stochastic_signal"`
-	BollingerBandsPosition string  `json:"bollinger_bands_position"`
-	SupportLevel           float64 `json:"support_level"`
-	TechnicalScore         int     `json:"technical_score"`
+	Trend                  string   `json:"trend"`
+	Momentum               string   `json:"momentum"`
+	EMASignal              string   `json:"ema_signal"`
+	RSISignal              string   `json:"rsi_signal"`
+	MACDSignal             string   `json:"macd_signal"`
+	BollingerBandsPosition string   `json:"bollinger_bands_position"`
+	SupportLevel           float64  `json:"support_level"`
+	ResistanceLevel        float64  `json:"resistance_level"`
+	TechnicalScore         int      `json:"technical_score"`
+	KeyInsights            []string `json:"key_insights"`
 }
 
 // Recommendation
@@ -71,6 +69,7 @@ type Recommendation struct {
 	CutLoss         float64 `json:"cut_loss,omitempty"`
 	ConfidenceLevel int     `json:"confidence_level"`
 	Reasoning       string  `json:"reasoning"`
+	RiskRewardRatio float64 `json:"risk_reward_ratio"`
 }
 
 // News Summary
