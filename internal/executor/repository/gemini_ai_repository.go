@@ -258,6 +258,17 @@ func (r *geminiAIRepository) AnalyzeStock(ctx context.Context, symbol string, st
 	return r.parseIndividualAnalysisResponse(geminiResp)
 }
 
+func (r *geminiAIRepository) PositionMonitoring(ctx context.Context, request *dto.PositionMonitoringRequest, stockData *dto.StockData, summary *entity.StockNewsSummary) (*dto.PositionMonitoringResponse, error) {
+	prompt := r.buildPositionMonitoringPrompt(ctx, request, stockData, summary)
+
+	geminiResp, err := r.executeGeminiAIRequest(ctx, prompt)
+	if err != nil {
+		return nil, err
+	}
+
+	return r.parsePositionMonitoringResponse(geminiResp)
+}
+
 func (r *geminiAIRepository) parseIndividualAnalysisResponse(resp *dto.GeminiAPIResponse) (*dto.IndividualAnalysisResponse, error) {
 	if len(resp.Candidates) == 0 || len(resp.Candidates[0].Content.Parts) == 0 {
 		return nil, fmt.Errorf("no content found in Gemini response")
@@ -269,6 +280,22 @@ func (r *geminiAIRepository) parseIndividualAnalysisResponse(resp *dto.GeminiAPI
 	var result dto.IndividualAnalysisResponse
 	if err := json.Unmarshal([]byte(rawJSON), &result); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal individual analysis response from Gemini response: %w", err)
+	}
+
+	return &result, nil
+}
+
+func (r *geminiAIRepository) parsePositionMonitoringResponse(resp *dto.GeminiAPIResponse) (*dto.PositionMonitoringResponse, error) {
+	if len(resp.Candidates) == 0 || len(resp.Candidates[0].Content.Parts) == 0 {
+		return nil, fmt.Errorf("no content found in Gemini response")
+	}
+
+	rawJSON := resp.Candidates[0].Content.Parts[0].Text
+	rawJSON = strings.Trim(rawJSON, "`json\n`")
+
+	var result dto.PositionMonitoringResponse
+	if err := json.Unmarshal([]byte(rawJSON), &result); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal position monitoring response from Gemini response: %w", err)
 	}
 
 	return &result, nil
@@ -316,7 +343,6 @@ Berikut adalah ringkasan berita untuk saham %s selama periode %s hingga %s:
 ### PERAN ANDA
 Anda adalah analis teknikal berpengalaman di pasar saham Indonesia. Tugas Anda adalah memberikan analisis swing trading jangka pendek (1-5 hari) untuk saham %s berdasarkan data harga dan berita pasar terbaru.
 
-### INPUT BERITA
 %s
 
 ### DATA OHLC (%s)
@@ -359,7 +385,7 @@ Anda adalah analis teknikal berpengalaman di pasar saham Indonesia. Tugas Anda a
     "cut_loss": 1420,
     "risk_reward_ratio": 3.0,
     "confidence_level": 80,
-    "reasoning": "Gabungkan hasil analisis teknikal dan konteks berita. Contoh: 'Trend bullish dengan indikator teknikal mendukung (EMA dan MACD positif, volume tinggi). Risk/reward ratio layak. Berita terbaru menunjukkan sentimen positif terhadap sektor EV dan kawasan industri, menjadi katalis penguatan jangka pendek.'"
+    "reasoning": "Trend bullish dengan volume tinggi dan indikator teknikal mendukung. Berita memberikan sentimen positif tambahan."
   },
   "news_summary": {
     "sentiment": "positive",
@@ -369,5 +395,154 @@ Anda adalah analis teknikal berpengalaman di pasar saham Indonesia. Tugas Anda a
   }
 }
 `, symbol, newsSummaryText, stockData.Range, string(ohlcvJSON), stockData.MarketPrice, symbol, utils.TimeNowWIB().Format("2006-01-02T15:04:05-07:00"))
+	return prompt
+}
+
+func (r *geminiAIRepository) buildPositionMonitoringPrompt(ctx context.Context,
+	request *dto.PositionMonitoringRequest,
+	stockData *dto.StockData,
+	summary *entity.StockNewsSummary,
+) string {
+	// Convert OHLCV data to JSON string
+	ohlcvJSON, _ := json.Marshal(stockData.OHLCV)
+
+	// Ringkasan sentimen dari berita
+	newsSummaryText := ""
+	if summary != nil {
+		newsSummaryText = fmt.Sprintf(`
+### INPUT BERITA TERKINI		
+Berikut adalah ringkasan sentimen berita untuk saham %s selama periode %s hingga %s:
+
+- Sentimen utama: %s
+- Dampak terhadap harga: %s
+- Key issues: %s
+- Ringkasan singkat: %s
+- Confidence score: %.2f
+- Saran tindakan: %s
+- Alasan: %s
+
+Gunakan ringkasan ini untuk mempertimbangkan konteks eksternal (berita) dalam analisis teknikal berikut.
+`,
+			summary.StockCode,
+			summary.SummaryStart.Format("2006-01-02"),
+			summary.SummaryEnd.Format("2006-01-02"),
+			summary.SummarySentiment,
+			summary.SummaryImpact,
+			strings.Join(summary.KeyIssues, ", "),
+			summary.ShortSummary,
+			summary.SummaryConfidenceScore,
+			summary.SuggestedAction,
+			summary.Reasoning,
+		)
+	}
+
+	// Calculate remaining holding period
+	positionAgeDays := int(time.Since(request.BuyTime).Hours() / 24)
+	remainingDays := request.MaxHoldingPeriodDays - positionAgeDays
+	if remainingDays < 0 {
+		remainingDays = 0
+	}
+
+	prompt := fmt.Sprintf(`
+### PERAN ANDA
+Kamu adalah analis teknikal saham Indonesia yang ahli dalam swing trading. Evaluasi posisi saham berikut dan berikan rekomendasi: HOLD, SELL, atau CUT_LOSS.
+
+### TUJUAN
+Tujuanmu adalah mengevaluasi apakah posisi saham ini sebaiknya dipertahankan (HOLD), dijual (SELL), atau dihentikan (CUT_LOSS), berdasarkan kombinasi analisa teknikal (seperti trend, EMA, RSI, MACD, Bollinger Bands, volume), harga pasar saat ini, waktu tersisa dalam periode holding, serta ringkasan berita terbaru jika tersedia. 
+Berita hanya boleh digunakan jika memiliki tingkat kepercayaan (confidence) yang tinggi dan memberikan dampak yang mendukung atau memperlemah sinyal teknikal utama. Abaikan berita yang tidak relevan atau bertentangan dengan analisa teknikal dominan.
+
+Target Price dan Stop Loss sudah tersedia dan harus digunakan sebagai acuan awal. Namun, jika hasil analisis teknikal dan konteks berita menunjukkan bahwa target atau stop loss tersebut tidak lagi realistis atau terlalu agresif/defensif, kamu boleh merekomendasikan perubahan dengan alasan yang jelas dan terukur.
+
+%s
+
+### INPUT DATA SAHAM SAYA
+Data posisi trading:
+- Symbol: %s
+- Buy Price: %.2f
+- Buy Time: %s
+- Max Holding Period: %d days
+- Position Age: %d days
+- Remaining Days: %d days
+- Target Price: %.2f
+- Stop Loss: %.2f
+
+
+### DATA HARGA OHLC %s:
+%s
+
+### CURRENT MARKET PRICE
+%.2f (ini adalah harga pasar saat ini)
+
+
+
+### KRITERIA KEPUTUSAN (Gabungan Analisis Teknikal dan Berita):
+- **HOLD** jika:
+  - Trend jangka pendek & menengah masih positif
+  - EMA, RSI, MACD mendukung kenaikan
+  - Volume menguat
+  - Risk-reward ≥ 1:3 dan waktu tersisa cukup
+  - Berita mendukung (sentimen positif atau netral, berdampak bullish)
+
+- **SELL** jika:
+  - Indikator teknikal mulai melemah (trend, EMA, RSI, MACD)
+  - Volume melemah saat harga naik
+  - Target sulit tercapai dalam sisa waktu
+  - Berita negatif dengan dampak bearish yang menguatkan sinyal teknikal
+
+- **CUT_LOSS** jika:
+  - Terjadi breakdown support penting atau sinyal reversal kuat
+  - Risk tinggi, reward rendah, dan waktu hampir habis
+  - Berita buruk meningkatkan risiko signifikan (confidence tinggi, dampak bearish)
+
+Gunakan berita hanya jika relevan dan selaras atau berlawanan kuat dengan sinyal teknikal.
+
+### FORMAT OUTPUT YANG DIHARAPKAN (JSON)
+Pastikan field "exit_reasoning" dan "exit_conditions" selalu ditulis dalam bahasa Indonesia yang jelas dan mudah dipahami. Jelaskan alasan exit secara logis berdasarkan analisis teknikal dan konteks berita, serta jabarkan kondisi exit dalam bentuk poin-poin terstruktur berbahasa Indonesia.
+{
+  "symbol": "%s",
+  "technical_analysis": {
+    "trend": "BULLISH",
+    "momentum": "STRONG",
+    "ema_signal": "BULLISH",
+    "rsi_signal": "NEUTRAL",
+    "macd_signal": "BULLISH",
+    "bollinger_bands_position": "UPPER",
+    "support_level": 1420,
+    "resistance_level": 1615,
+	"key_insights": [
+      "Trend bullish dengan volume mendukung",
+      "Support dan resistance teridentifikasi",
+      "Risk/reward ratio layak untuk entry"
+    ],
+    "technical_score": 85
+  },
+  "recommendation": {
+    "action": "HOLD|SELL|CUT_LOSS",
+	"target_exit_price": 9500,
+	"stop_loss_price": 8950,
+	"exit_reasoning": "Trend bullish dengan volume tinggi dan indikator teknikal mendukung. Berita memberikan sentimen positif tambahan.",
+	"exit_conditions": [
+		"Mencapai target price 9500",
+		"Stop loss di 8950",
+		"Trend reversal signal"
+	],
+	"risk_reward_ratio": 3.0,
+	"confidence_level": 80
+  },
+  "news_summary":{ (JIKA ADA NEWS SUMMARY)
+    "confidence_score": 0.0 - 1.0,
+    "sentiment": "positive, negative, neutral, mixed",
+    "impact": "bullish, bearish, sideways"
+    "key_issues": ["issue1", "issue2", "issue3"]
+  }
+}
+  
+### CATATAN
+- Pastikan semua keputusan didasarkan pada kombinasi sinyal teknikal dan konteks berita, bukan berdasarkan perasaan atau prediksi jangka panjang. Jika indikator saling bertentangan, prioritaskan risk-reward dan waktu tersisa sebagai penentu akhir.
+- Untuk bagian "exit_reasoning", berikan penjelasan ringkas namun jelas yang menggabungkan sinyal teknikal dan konteks berita (jika tersedia).
+`, newsSummaryText, request.Symbol, request.BuyPrice, request.BuyTime.Format("2006-01-02T15:04:05-07:00"),
+		request.MaxHoldingPeriodDays, positionAgeDays, remainingDays, request.TargetPrice, request.StopLoss, stockData.Range, string(ohlcvJSON),
+		stockData.MarketPrice, request.Symbol)
+
 	return prompt
 }

@@ -23,19 +23,24 @@ executor:
   max_concurrent_tasks: 10
   redis_stream_task_execution_timeout: "1m"
   redis_stream_stock_analyzer_timeout: "1m"
-  redis_stream_stock_analyzer_retry_interval: "30s"
+  redis_stream_stock_analyzer_retry_interval: "1m"
   redis_stream_stock_analyzer_max_idle_duration: "5m"
   redis_stream_stock_analyzer_max_retry: 3
+
+  redis_stream_stock_position_monitor_timeout: "1m"
+  redis_stream_stock_position_monitor_retry_interval: "30s"
+  redis_stream_stock_position_monitor_max_idle_duration: "1m"
+  redis_stream_stock_position_monitor_max_retry: 3
 logger:
   level: "debug" # debug, info, warn, error, fatal, panic
   encoding: "json" # json, console
 
 openrouter:
-  api_key: "XXXXXXXXXXXXXXXX"
+  api_key: "XXXXXXXX"
   model: "deepseek/deepseek-chat-v3-0324:free"
 
 gemini:
-  api_key: "XXXXXXXXXXXXXXXX"
+  api_key: "XXXXXX"
   model: "gemini-2.0-flash"
   max_request_per_minute: 15
   max_token_per_minute: 1_000_000
@@ -44,7 +49,7 @@ ai:
   provider: "gemini" # openrouter or gemini
 
 telegram:
-  bot_token: "XXXXXXXXXXXXXXXX"
+  bot_token: "XXXXXS"
   chat_id: 1596374167
 
 yahoo_finance:

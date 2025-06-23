@@ -9,11 +9,12 @@ import (
 type JobType string
 
 const (
-	JobTypeHTTP             JobType = "http_request"
-	JobTypeStockNewsScraper JobType = "stock_news_scraper"
-	JobTypeStockNewsSummary JobType = "stock_news_summary"
-	JobTypeStockPriceAlert  JobType = "stock_price_alert"
-	JobTypeStockAnalyzer    JobType = "stock_analyzer"
+	JobTypeHTTP                 JobType = "http_request"
+	JobTypeStockNewsScraper     JobType = "stock_news_scraper"
+	JobTypeStockNewsSummary     JobType = "stock_news_summary"
+	JobTypeStockPriceAlert      JobType = "stock_price_alert"
+	JobTypeStockAnalyzer        JobType = "stock_analyzer"
+	JobTypeStockPositionMonitor JobType = "stock_position_monitor"
 )
 
 type Job struct {

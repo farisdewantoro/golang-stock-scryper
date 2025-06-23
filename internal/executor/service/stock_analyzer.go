@@ -20,7 +20,7 @@ import (
 type StockAnalyzerService interface {
 	ProcessTask(ctx context.Context)
 	ProcessRetries(ctx context.Context)
-	Analyze(ctx context.Context, stockCode string, interval string, rangeData string) error
+	Execute(ctx context.Context, stockCode string, interval string, rangeData string) error
 }
 
 type stockAnalyzerService struct {
@@ -93,7 +93,7 @@ func (s *stockAnalyzerService) ProcessTask(ctx context.Context) {
 
 	s.log.Debug("Processing stock analyzer task", logger.StringField("stock_code", streamData.StockCode), logger.StringField("interval", streamData.Interval), logger.StringField("range", streamData.Range))
 
-	if err := s.Analyze(ctx, streamData.StockCode, streamData.Interval, streamData.Range); err != nil {
+	if err := s.Execute(ctx, streamData.StockCode, streamData.Interval, streamData.Range); err != nil {
 		s.log.Error("Failed to analyze stock", logger.ErrorField(err), logger.Field("message_id", message.ID), logger.StringField("stock_code", streamData.StockCode), logger.StringField("interval", streamData.Interval), logger.StringField("range", streamData.Range))
 		return
 	}
@@ -106,7 +106,7 @@ func (s *stockAnalyzerService) ProcessTask(ctx context.Context) {
 
 }
 
-func (s *stockAnalyzerService) Analyze(ctx context.Context, stockCode string, interval string, rangeData string) error {
+func (s *stockAnalyzerService) Execute(ctx context.Context, stockCode string, interval string, rangeData string) error {
 	stockData, err := s.yahooFinance.Get(ctx, dto.GetStockDataParam{
 		StockCode: stockCode,
 		Interval:  interval,
@@ -244,7 +244,7 @@ func (s *stockAnalyzerService) ProcessRetries(ctx context.Context) {
 		return
 	}
 
-	if err := s.Analyze(ctx, streamData.StockCode, streamData.Interval, streamData.Range); err != nil {
+	if err := s.Execute(ctx, streamData.StockCode, streamData.Interval, streamData.Range); err != nil {
 		s.log.Error("Failed to analyze stock", logger.ErrorField(err), logger.Field("message_id", msg.ID), logger.StringField("stock_code", streamData.StockCode), logger.StringField("interval", streamData.Interval), logger.StringField("range", streamData.Range))
 		return
 	}

@@ -99,6 +99,11 @@ func runServe(cmd *cobra.Command, args []string) {
 			appLogger.Fatal("Failed to create consumer group", logger.ErrorField(err))
 		}
 	}
+	if err := redisClient.XGroupCreateMkStream(context.Background(), common.RedisStreamStockPositionMonitor, common.RedisStreamGroup, "0").Err(); err != nil {
+		if err.Error() != "BUSYGROUP Consumer Group name already exists" {
+			appLogger.Fatal("Failed to create consumer group", logger.ErrorField(err))
+		}
+	}
 
 	// Initialize repositories
 	jobRepo := repository.NewJobRepository(db.DB)
@@ -110,6 +115,8 @@ func runServe(cmd *cobra.Command, args []string) {
 	stocksRepo := repository.NewStocksRepository(db.DB)
 	yahooFinanceRepo, err := repository.NewYahooFinanceRepository(cfg, appLogger)
 	stockSignalRepo := repository.NewStockSignalRepository(db.DB)
+	stockPositionMonitoringRepo := repository.NewStockPositionsMonitoringsRepository(db.DB)
+
 	if err != nil {
 		appLogger.Fatal("Failed to initialize Yahoo Finance repository", zap.Error(err))
 	}
@@ -174,14 +181,20 @@ func runServe(cmd *cobra.Command, args []string) {
 			geminiRepo,
 			telegramNotifier,
 		),
+		strategy.NewStockPositionMonitorStrategy(
+			appLogger,
+			redisClient,
+			stockPositionsRepo,
+		),
 	}
 
 	// Initialize executor service
 	executorSvc := service.NewExecutorService(cfg, redisClient.Client, jobRepo, historyRepo, appLogger, strategies)
 	stockAnalyzerSvc := service.NewStockAnalyzerService(cfg, appLogger, redisClient.Client, geminiRepo, yahooFinanceRepo, stockNewsSummaryRepo, stockSignalRepo, telegramNotifier)
+	stockPositionMonitoringSvc := service.NewStockPositionMonitoringService(cfg, appLogger, redisClient.Client, geminiRepo, yahooFinanceRepo, stockPositionsRepo, stockNewsSummaryRepo, stockPositionMonitoringRepo, telegramNotifier)
 
 	// Initialize and start the Redis consumer
-	redisConsumer := consumer.NewRedisConsumer(cfg, redisClient.Client, executorSvc, stockAnalyzerSvc, appLogger)
+	redisConsumer := consumer.NewRedisConsumer(cfg, redisClient.Client, executorSvc, stockAnalyzerSvc, stockPositionMonitoringSvc, appLogger)
 	redisConsumer.Start(ctx)
 
 	appLogger.Info("Execution service started. Waiting for tasks...")

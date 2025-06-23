@@ -46,6 +46,9 @@ type YahooFinanceResponse struct {
 }
 
 type GetStockPositionsParam struct {
-	StockCodes []string `json:"stock_codes"`
-	PriceAlert *bool    `json:"price_alert"`
+	IDs             []uint   `json:"ids"`
+	StockCodes      []string `json:"stock_codes"`
+	PriceAlert      *bool    `json:"price_alert"`
+	MonitorPosition *bool    `json:"monitor_position"`
+	IsActive        *bool    `json:"is_active"`
 }

@@ -7,7 +7,7 @@ import (
 	"gorm.io/gorm"
 )
 
-type StockPositionMonitor struct {
+type StockPositionMonitoring struct {
 	ID              int64          `json:"id"`
 	UserID          uint           `json:"user_id"`
 	StockPositionID uint           `json:"stock_position_id"`
@@ -26,6 +26,6 @@ type StockPositionMonitor struct {
 	User            User           `gorm:"foreignKey:UserID"`
 }
 
-func (StockPositionMonitor) TableName() string {
+func (StockPositionMonitoring) TableName() string {
 	return "stock_position_monitorings"
 }

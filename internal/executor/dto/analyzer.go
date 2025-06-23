@@ -1,6 +1,8 @@
 package dto
 
-import "golang-stock-scryper/internal/entity"
+import (
+	"golang-stock-scryper/internal/entity"
+)
 
 // NewsAnalysisResult represents the structured result from the news analysis API.
 type NewsAnalysisResult struct {
@@ -14,4 +16,13 @@ type StreamDataStockAnalyzer struct {
 	StockCode string `json:"stock_code"`
 	Interval  string `json:"interval"`
 	Range     string `json:"range"`
+}
+
+type StreamDataStockPositionMonitor struct {
+	ID        uint   `json:"id"`
+	UserID    uint   `json:"user_id"`
+	StockCode string `json:"stock_code"`
+	Interval  string `json:"interval"`
+	Range     string `json:"range"`
+	SendNotif bool   `json:"send_notif"`
 }

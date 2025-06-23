@@ -16,13 +16,14 @@ import (
 
 // RedisConsumer manages the consumption of tasks from a Redis stream.
 type RedisConsumer struct {
-	cfg                  *config.Config
-	redisClient          *redis.Client
-	executorService      service.ExecutorService
-	stockAnalyzerService service.StockAnalyzerService
-	logger               *logger.Logger
-	stopChan             chan struct{}
-	wg                   sync.WaitGroup
+	cfg                            *config.Config
+	redisClient                    *redis.Client
+	executorService                service.ExecutorService
+	stockAnalyzerService           service.StockAnalyzerService
+	stockPositionMonitoringService service.StockPositionMonitoringService
+	logger                         *logger.Logger
+	stopChan                       chan struct{}
+	wg                             sync.WaitGroup
 }
 
 // NewRedisConsumer creates a new RedisConsumer.
@@ -31,15 +32,17 @@ func NewRedisConsumer(
 	redisClient *redis.Client,
 	executorService service.ExecutorService,
 	stockAnalyzerService service.StockAnalyzerService,
+	stockPositionMonitoringService service.StockPositionMonitoringService,
 	log *logger.Logger,
 ) *RedisConsumer {
 	return &RedisConsumer{
-		cfg:                  cfg,
-		redisClient:          redisClient,
-		executorService:      executorService,
-		stockAnalyzerService: stockAnalyzerService,
-		logger:               log,
-		stopChan:             make(chan struct{}),
+		cfg:                            cfg,
+		redisClient:                    redisClient,
+		executorService:                executorService,
+		stockAnalyzerService:           stockAnalyzerService,
+		stockPositionMonitoringService: stockPositionMonitoringService,
+		logger:                         log,
+		stopChan:                       make(chan struct{}),
 	}
 }
 
@@ -48,9 +51,11 @@ func (c *RedisConsumer) Start(ctx context.Context) {
 	c.logger.Info("Redis consumer started")
 	c.RegisterStreamHandler(ctx, c.executorService.ProcessTask, common.RedisStreamSchedulerTaskExecution, c.cfg.Executor.RedisStreamTaskExecutionTimeout)
 	c.RegisterStreamHandler(ctx, c.stockAnalyzerService.ProcessTask, common.RedisStreamStockAnalyzer, c.cfg.Executor.RedisStreamStockAnalyzerTimeout)
+	c.RegisterStreamHandler(ctx, c.stockPositionMonitoringService.ProcessTask, common.RedisStreamStockPositionMonitor, c.cfg.Executor.RedisStreamStockPositionMonitorTimeout)
 
 	//handle retry
 	c.RegisterTickerHandler(ctx, c.stockAnalyzerService.ProcessRetries, c.cfg.Executor.RedisStreamStockAnalyzerRetryInterval, c.cfg.Executor.RedisStreamStockAnalyzerMaxIdleDuration, common.RedisStreamStockAnalyzer+"-retry")
+	c.RegisterTickerHandler(ctx, c.stockPositionMonitoringService.ProcessRetries, c.cfg.Executor.RedisStreamStockPositionMonitorRetryInterval, c.cfg.Executor.RedisStreamStockPositionMonitorMaxIdleDuration, common.RedisStreamStockPositionMonitor+"-retry")
 }
 
 func (c *RedisConsumer) RegisterStreamHandler(ctx context.Context, fn func(ctx context.Context), streamName string, timeout time.Duration) {

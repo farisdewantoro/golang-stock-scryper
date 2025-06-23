@@ -79,3 +79,30 @@ type NewsSummary struct {
 	Impact          string   `json:"impact"`
 	KeyIssues       []string `json:"key_issues"`
 }
+
+type PositionMonitoringRequest struct {
+	Symbol               string    `json:"symbol" binding:"required"`
+	BuyPrice             float64   `json:"buy_price" binding:"required"`
+	BuyTime              time.Time `json:"buy_time" binding:"required"`
+	MaxHoldingPeriodDays int       `json:"max_holding_period_days" binding:"required"`
+	TargetPrice          float64   `json:"target_price" binding:"required"`
+	StopLoss             float64   `json:"stop_loss" binding:"required"`
+}
+
+type PositionMonitoringResponse struct {
+	Symbol            string                 `json:"symbol"`
+	TechnicalAnalysis TechnicalAnalysis      `json:"technical_analysis"`
+	NewsSummary       NewsSummary            `json:"news_summary,omitempty"`
+	Recommendation    RecommendationPosition `json:"recommendation,omitempty"`
+}
+
+type RecommendationPosition struct {
+	Action          string   `json:"action"`
+	BuyPrice        float64  `json:"buy_price,omitempty"`
+	TargetPrice     float64  `json:"target_price,omitempty"`
+	CutLoss         float64  `json:"cut_loss,omitempty"`
+	ConfidenceLevel int      `json:"confidence_level"`
+	ExitReasoning   string   `json:"exit_reasoning"`
+	ExitConditions  []string `json:"exit_conditions"`
+	RiskRewardRatio float64  `json:"risk_reward_ratio"`
+}
