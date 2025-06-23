@@ -314,113 +314,61 @@ Berikut adalah ringkasan berita untuk saham %s selama periode %s hingga %s:
 
 	prompt := fmt.Sprintf(`
 ### PERAN ANDA
-Anda adalah analis teknikal profesional dengan pengalaman lebih dari 10 tahun di pasar saham Indonesia. Tugas Anda adalah melakukan analisis teknikal dan memberikan sinyal trading **swing jangka pendek (1-5 hari)** berdasarkan data harga (OHLC) dan berita pasar untuk saham %s.
+Anda adalah analis teknikal berpengalaman di pasar saham Indonesia. Tugas Anda adalah memberikan analisis swing trading jangka pendek (1-5 hari) untuk saham %s berdasarkan data harga dan berita pasar terbaru.
 
-### TUJUAN
-Berikan rekomendasi trading dalam format JSON berdasarkan:
-- Analisis tren teknikal dan indikator (EMA, RSI, MACD, Bollinger Bands, volume, candlestick)
-- Struktur pasar, support/resistance
-- Konteks berita terbaru
-- Manajemen risiko ketat: Hanya berikan sinyal **BUY** jika **risk/reward ratio ≥ 1:3**
-
+### INPUT BERITA
 %s
 
-
-### INPUT DATA HARGA (OHLC %s terakhir)
-(Data OHLC seperti sebelumnya, tidak perlu diubah di sini) :
+### DATA OHLC (%s)
 %s
 
 ### HARGA PASAR SAAT INI
-%.2f (ini adalah harga pasar saat ini)
+%.2f
 
-### KRITERIA ANALISIS TEKNIKAL
-Analisis teknikal yang diperlukan:
-1. Trend: BULLISH/BEARISH/SIDEWAYS
-2. Technical indicators:
-   - EMA signal (BULLISH, BEARISH, NEUTRAL)
-   - RSI signal (OVERBOUGHT, OVERSOLD, NEUTRAL)
-   - MACD signal (BULLISH, BEARISH, NEUTRAL)
-   - Bollinger Bands position (UPPER/MIDDLE/LOWER)
-3. Support dan resistance levels
-4. Volume trend (HIGH/NORMAL/LOW) dan momentum
-5. Candlestick pattern terbaru
-6. Technical score (0-100)
+### ATURAN REKOMENDASI
+- Berikan sinyal **BUY** hanya jika **risk/reward ratio ≥ 1:3**
+- Jika tidak memenuhi syarat: keluarkan sinyal **HOLD**
+- Gunakan indikator teknikal seperti EMA, MACD, RSI, volume, candlestick, Bollinger Bands
+- Maksimum holding 1-5 hari
+- Cut loss berbasis support kuat
 
-### PANDUAN MANAJEMEN RISIKO
-- Berikan **BUY signal** hanya jika:
-  - Risk/reward ratio ≥ 1:3
-  - Trend, indikator, dan volume mendukung
-- Cut loss berdasarkan support kuat
-- Target price harus realistis dan berdasarkan resistance  
-- Maksimal holding 1-5 hari
-- Ulangi analisis jika syarat tidak terpenuhi dan output sinyal: HOLD
-
-### FORMAT OUTPUT (JSON):
+### FORMAT OUTPUT (JSON)
 {
   "symbol": "%s",
   "analysis_date": "%s",
-  "max_holding_period_days": (1 sampai 5 hari),
+  "max_holding_period_days": 3,
   "technical_analysis": {
-    "trend": "BULLISH|BEARISH|SIDEWAYS",
-    "short_term_trend": "BULLISH|BEARISH|SIDEWAYS",
-    "medium_term_trend": "BULLISH|BEARISH|SIDEWAYS",
-    "ema_signal": "BULLISH|BEARISH|NEUTRAL",
-    "rsi_signal": "OVERBOUGHT|OVERSOLD|NEUTRAL",
-    "macd_signal": "BULLISH|BEARISH|NEUTRAL",
-    "bollinger_bands_position": "UPPER|MIDDLE|LOWER",
-    "support_level": 8500,
-    "resistance_level": 9200,
-    "key_support_levels": [8500, 8400, 8300],
-    "key_resistance_levels": [9200, 9300, 9400],
-    "volume_trend": "HIGH|NORMAL|LOW",
-    "volume_confirmation": "POSITIVE|NEGATIVE|NEUTRAL",
-    "momentum": "STRONG|MODERATE|WEAK",
-    "candlestick_pattern": "BULLISH|BEARISH|NEUTRAL",
-    "market_structure": "UPTREND|DOWNTREND|SIDEWAYS",
-    "trend_strength": "STRONG|MODERATE|WEAK",
-    "breakout_potential": "HIGH|MEDIUM|LOW",
+    "trend": "BULLISH",
+    "momentum": "STRONG",
+    "ema_signal": "BULLISH",
+    "rsi_signal": "NEUTRAL",
+    "macd_signal": "BULLISH",
+    "bollinger_bands_position": "UPPER",
+    "support_level": 1420,
+    "resistance_level": 1615,,
+	"key_insights": [
+      "Trend bullish dengan volume mendukung",
+      "Support dan resistance teridentifikasi",
+      "Risk/reward ratio layak untuk entry"
+    ]
     "technical_score": 85
   },
   "recommendation": {
     "action": "BUY|HOLD",
-    "buy_price": (Harga pembelian),
-    "target_price": (Harga target - risk_reward_ratio ≥ 1:3),
-    "cut_loss": (Harga cut loss),
-    "confidence_level": (Confidence level 0-100),
-    "reasoning": "Analisis teknikal menunjukkan momentum bullish dengan volume mendukung. EMA 9 di atas EMA 21, RSI 65.5 netral-positif, MACD bullish. Support 8500, resistance 9200. Risk/reward ratio menguntungkan.",
-    "risk_reward_analysis": {
-      "potential_profit": 450,
-      "potential_profit_percentage": 5.14,
-      "potential_loss": 350,
-      "potential_loss_percentage": 4.0,
-      "risk_reward_ratio": 1.29,
-      "risk_level": "LOW|MEDIUM|HIGH",
-      "expected_holding_period": "3-5 days",
-      "success_probability": 75
-    }
+    "buy_price": 1550,
+    "target_price": 1720,
+    "cut_loss": 1420,
+    "risk_reward_ratio": 3.0,
+    "confidence_level": 80,
+    "reasoning": "Gabungkan hasil analisis teknikal dan konteks berita. Contoh: 'Trend bullish dengan indikator teknikal mendukung (EMA dan MACD positif, volume tinggi). Risk/reward ratio layak. Berita terbaru menunjukkan sentimen positif terhadap sektor EV dan kawasan industri, menjadi katalis penguatan jangka pendek.'"
   },
-  "risk_level": "LOW|MEDIUM|HIGH",
-  "technical_summary": {
-    "overall_signal": "BULLISH",
-    "trend_strength": "STRONG",
-    "volume_support": "HIGH",
-    "momentum": "POSITIVE",
-    "risk_level": "LOW",
-    "confidence_level": (Confidence level 0-100),
-    "key_insights": [
-      "Trend bullish dengan volume mendukung",
-      "Technical indicators positif",
-      "Support dan resistance teridentifikasi",
-      "Risk/reward ratio menguntungkan"
-    ]
-  },
-  "news_summary":{ (JIKA ADA DATA NEWS SUMMARY)
-    "confidence_score": (Confidence score 0.0 - 1.0),
-    "sentiment": "positive, negative, neutral, mixed",
-    "impact": "bullish, bearish, sideways"
-    "key_issues": ["issue1", "issue2", "issue3"]
+  "news_summary": {
+    "sentiment": "positive",
+    "impact": "bullish",
+    "confidence_score": 0.8,
+    "key_issues": ["EV", "industri", "investasi asing"]
   }
-}`, symbol, newsSummaryText, stockData.Range, string(ohlcvJSON), stockData.MarketPrice, symbol, utils.TimeNowWIB().Format("2006-01-02T15:04:05-07:00"))
-
+}
+`, symbol, newsSummaryText, stockData.Range, string(ohlcvJSON), stockData.MarketPrice, symbol, utils.TimeNowWIB().Format("2006-01-02T15:04:05-07:00"))
 	return prompt
 }
