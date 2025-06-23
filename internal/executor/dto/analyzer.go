@@ -9,3 +9,9 @@ type NewsAnalysisResult struct {
 	KeyIssue      []string              `json:"key_issue"`
 	StockMentions []entity.StockMention `json:"stock_mentions"`
 }
+
+type StreamDataStockAnalyzer struct {
+	StockCode string `json:"stock_code"`
+	Interval  string `json:"interval"`
+	Range     string `json:"range"`
+}

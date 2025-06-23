@@ -2,12 +2,17 @@ package config
 
 import (
 	"golang-stock-scryper/pkg/config"
+	"time"
 )
 
 // Executor holds executor-specific configuration.
 type Executor struct {
-	MaxConcurrentTasks int    `mapstructure:"max_concurrent_tasks"`
-	DefaultTaskTimeout string `mapstructure:"default_task_timeout"`
+	MaxConcurrentTasks                      int           `mapstructure:"max_concurrent_tasks"`
+	RedisStreamTaskExecutionTimeout         time.Duration `mapstructure:"redis_stream_task_execution_timeout"`
+	RedisStreamStockAnalyzerTimeout         time.Duration `mapstructure:"redis_stream_stock_analyzer_timeout"`
+	RedisStreamStockAnalyzerRetryInterval   time.Duration `mapstructure:"redis_stream_stock_analyzer_retry_interval"`
+	RedisStreamStockAnalyzerMaxIdleDuration time.Duration `mapstructure:"redis_stream_stock_analyzer_max_idle_duration"`
+	RedisStreamStockAnalyzerMaxRetry        int           `mapstructure:"redis_stream_stock_analyzer_max_retry"`
 }
 
 // OpenRouter holds the configuration for the OpenRouter API.

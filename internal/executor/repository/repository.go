@@ -16,4 +16,5 @@ type NewsAnalyzerRepository interface {
 type GeminiAIRepository interface {
 	NewsAnalyzerRepository
 	GenerateNewsSummary(ctx context.Context, stockCode string, newsItems []entity.StockNews) (*dto.NewsSummaryResult, error)
+	AnalyzeStock(ctx context.Context, symbol string, stockData *dto.StockData, summary *entity.StockNewsSummary) (*dto.IndividualAnalysisResponse, error)
 }

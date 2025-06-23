@@ -1,6 +1,8 @@
 package telegram
 
 import (
+	"golang-stock-scryper/pkg/utils"
+
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
@@ -30,8 +32,8 @@ func NewClient(botToken string, chatID int64) (Notifier, error) {
 
 // SendMessage sends a message to the configured Telegram chat.
 func (c *client) SendMessage(text string) error {
-	msg := tgbotapi.NewMessage(c.chatID, text)
-	msg.ParseMode = tgbotapi.ModeMarkdown // Using Markdown for formatting
+	msg := tgbotapi.NewMessage(c.chatID, utils.EscapeMarkdownV2(text))
+	msg.ParseMode = tgbotapi.ModeMarkdownV2 // Using Markdown for formatting
 	_, err := c.bot.Send(msg)
 	return err
 }

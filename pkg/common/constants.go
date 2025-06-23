@@ -1,7 +1,9 @@
 package common
 
 const (
-	SchedulerTaskExecutionEventName = "schedule.task.execution"
-	RedisStreamGroup                = "executor-group"
-	RedisStreamConsumer             = "executor-consumer"
+	RedisStreamSchedulerTaskExecution = "schedule.task.execution"
+	RedisStreamStockAnalyzer          = "stock.analyzer"
+
+	RedisStreamGroup    = "executor-group"
+	RedisStreamConsumer = "executor-consumer"
 )

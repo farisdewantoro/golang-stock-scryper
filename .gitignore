@@ -36,5 +36,5 @@ ehthumbs.db
 Thumbs.db
 
 configs/*
-!configs/config-executor.yaml
-!configs/config-scheduler.yaml
+!configs/config-executor.example.yaml
+!configs/config-scheduler.example.yaml

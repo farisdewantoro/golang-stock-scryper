@@ -173,3 +173,10 @@ func FormatStockAlertResultForTelegram(alertType AlertType, stockCode string, tr
 	builder.WriteString(fmt.Sprintf("%s\n", utils.PrettyDate(time.Unix(timestamp, 0))))
 	return builder.String()
 }
+
+func FormatErrorAlertMessage(time time.Time, msg string) string {
+	return fmt.Sprintf(`📛 [ERROR ALERT] 
+🕒 %s
+🔧 Error: %s	
+`, utils.PrettyDate(time), msg)
+}

@@ -63,10 +63,9 @@ func (s *executorService) ProcessTask(ctx context.Context) {
 	streams, err := s.redisClient.XReadGroup(ctx, &redis.XReadGroupArgs{
 		Group:    common.RedisStreamGroup,
 		Consumer: common.RedisStreamConsumer,
-		Streams:  []string{common.SchedulerTaskExecutionEventName, ">"}, // ">" means only new messages
+		Streams:  []string{common.RedisStreamSchedulerTaskExecution, ">"}, // ">" means only new messages
 		Count:    1,
 		Block:    2 * time.Second, // Block for 2 seconds to allow graceful shutdown
-		NoAck:    true,
 	}).Result()
 
 	if err != nil {
@@ -83,6 +82,12 @@ func (s *executorService) ProcessTask(ctx context.Context) {
 	}
 
 	message := streams[0].Messages[0]
+
+	// Fire and forget
+	defer func() {
+		s.redisClient.XAck(ctx, common.RedisStreamSchedulerTaskExecution, common.RedisStreamGroup, message.ID)
+		s.redisClient.XDel(ctx, common.RedisStreamSchedulerTaskExecution, message.ID)
+	}()
 
 	// The task data is expected to be a JSON string in the 'payload' field.
 	taskData, ok := message.Values["payload"].(string)

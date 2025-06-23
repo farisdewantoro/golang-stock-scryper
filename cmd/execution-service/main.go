@@ -89,7 +89,12 @@ func runServe(cmd *cobra.Command, args []string) {
 
 	// Create the consumer group if it doesn't exist
 	// MKSTREAM creates the stream if it doesn't exist
-	if err := redisClient.XGroupCreateMkStream(context.Background(), common.SchedulerTaskExecutionEventName, common.RedisStreamGroup, "0").Err(); err != nil {
+	if err := redisClient.XGroupCreateMkStream(context.Background(), common.RedisStreamSchedulerTaskExecution, common.RedisStreamGroup, "0").Err(); err != nil {
+		if err.Error() != "BUSYGROUP Consumer Group name already exists" {
+			appLogger.Fatal("Failed to create consumer group", logger.ErrorField(err))
+		}
+	}
+	if err := redisClient.XGroupCreateMkStream(context.Background(), common.RedisStreamStockAnalyzer, common.RedisStreamGroup, "0").Err(); err != nil {
 		if err.Error() != "BUSYGROUP Consumer Group name already exists" {
 			appLogger.Fatal("Failed to create consumer group", logger.ErrorField(err))
 		}
@@ -104,6 +109,7 @@ func runServe(cmd *cobra.Command, args []string) {
 	stockPositionsRepo := repository.NewStockPositionsRepository(db.DB)
 	stocksRepo := repository.NewStocksRepository(db.DB)
 	yahooFinanceRepo, err := repository.NewYahooFinanceRepository(cfg, appLogger)
+	stockSignalRepo := repository.NewStockSignalRepository(db.DB)
 	if err != nil {
 		appLogger.Fatal("Failed to initialize Yahoo Finance repository", zap.Error(err))
 	}
@@ -158,10 +164,8 @@ func runServe(cmd *cobra.Command, args []string) {
 			stockPositionsRepo,
 			redisClient,
 		),
-	}
-
-	if geminiRepo != nil {
-		summaryStrategy := strategy.NewStockNewsSummaryStrategy(
+		strategy.NewStockAnalyzerStrategy(appLogger, redisClient, stocksRepo),
+		strategy.NewStockNewsSummaryStrategy(
 			db.DB,
 			appLogger,
 			stocksRepo,
@@ -169,15 +173,15 @@ func runServe(cmd *cobra.Command, args []string) {
 			stockNewsSummaryRepo,
 			geminiRepo,
 			telegramNotifier,
-		)
-		strategies = append(strategies, summaryStrategy)
+		),
 	}
 
 	// Initialize executor service
 	executorSvc := service.NewExecutorService(cfg, redisClient.Client, jobRepo, historyRepo, appLogger, strategies)
+	stockAnalyzerSvc := service.NewStockAnalyzerService(cfg, appLogger, redisClient.Client, geminiRepo, yahooFinanceRepo, stockNewsSummaryRepo, stockSignalRepo, telegramNotifier)
 
 	// Initialize and start the Redis consumer
-	redisConsumer := consumer.NewRedisConsumer(redisClient.Client, executorSvc, appLogger)
+	redisConsumer := consumer.NewRedisConsumer(cfg, redisClient.Client, executorSvc, stockAnalyzerSvc, appLogger)
 	redisConsumer.Start(ctx)
 
 	appLogger.Info("Execution service started. Waiting for tasks...")

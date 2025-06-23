@@ -13,6 +13,7 @@ const (
 	JobTypeStockNewsScraper JobType = "stock_news_scraper"
 	JobTypeStockNewsSummary JobType = "stock_news_summary"
 	JobTypeStockPriceAlert  JobType = "stock_price_alert"
+	JobTypeStockAnalyzer    JobType = "stock_analyzer"
 )
 
 type Job struct {

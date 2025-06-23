@@ -98,7 +98,7 @@ func (s *schedulerService) publishTask(ctx context.Context, schedule entity.Task
 	}
 
 	if err := s.redisClient.XAdd(ctx, &redis.XAddArgs{
-		Stream: common.SchedulerTaskExecutionEventName,
+		Stream: common.RedisStreamSchedulerTaskExecution,
 		Values: map[string]interface{}{"payload": taskPayload},
 		MaxLen: s.cfg.Redis.StreamMaxLen, // Limit the stream size
 	}).Err(); err != nil {

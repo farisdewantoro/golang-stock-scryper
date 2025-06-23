@@ -15,6 +15,7 @@ import (
 	"golang-stock-scryper/internal/executor/dto"
 	"golang-stock-scryper/pkg/logger"
 	"golang-stock-scryper/pkg/ratelimit"
+	"golang-stock-scryper/pkg/utils"
 
 	"golang.org/x/time/rate"
 	"google.golang.org/genai"
@@ -82,7 +83,10 @@ func (r *geminiAIRepository) executeGeminiAIRequest(ctx context.Context, prompt 
 		return nil, fmt.Errorf("failed to count tokens: %w", err)
 	}
 
-	r.logger.Debug("Gemini token count", logger.IntField("total_tokens", int(geminiTokenResp.TotalTokens)), logger.StringField("prompt", prompt))
+	r.logger.Debug("Gemini token count",
+		logger.IntField("total_tokens", int(geminiTokenResp.TotalTokens)),
+		logger.IntField("remaining", r.tokenLimiter.GetRemaining()),
+	)
 
 	if err := r.tokenLimiter.Wait(ctx, int(geminiTokenResp.TotalTokens)); err != nil {
 		return nil, fmt.Errorf("failed to wait for token limit: %w", err)
@@ -241,4 +245,183 @@ Berdasarkan semua informasi di atas, berikan analisis dengan format JSON:
 }`
 
 	return fmt.Sprintf(promptTemplate, stockCode, newsBuilder.String(), stockCode)
+}
+
+func (r *geminiAIRepository) AnalyzeStock(ctx context.Context, symbol string, stockData *dto.StockData, summary *entity.StockNewsSummary) (*dto.IndividualAnalysisResponse, error) {
+	prompt := r.buildIndividualAnalysisPrompt(ctx, symbol, stockData, summary)
+
+	geminiResp, err := r.executeGeminiAIRequest(ctx, prompt)
+	if err != nil {
+		return nil, err
+	}
+
+	return r.parseIndividualAnalysisResponse(geminiResp)
+}
+
+func (r *geminiAIRepository) parseIndividualAnalysisResponse(resp *dto.GeminiAPIResponse) (*dto.IndividualAnalysisResponse, error) {
+	if len(resp.Candidates) == 0 || len(resp.Candidates[0].Content.Parts) == 0 {
+		return nil, fmt.Errorf("no content found in Gemini response")
+	}
+
+	rawJSON := resp.Candidates[0].Content.Parts[0].Text
+	rawJSON = strings.Trim(rawJSON, "`json\n`")
+
+	var result dto.IndividualAnalysisResponse
+	if err := json.Unmarshal([]byte(rawJSON), &result); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal individual analysis response from Gemini response: %w", err)
+	}
+
+	return &result, nil
+}
+
+func (r *geminiAIRepository) buildIndividualAnalysisPrompt(
+	ctx context.Context,
+	symbol string,
+	stockData *dto.StockData,
+	summary *entity.StockNewsSummary,
+) string {
+	// Convert OHLCV data to JSON string
+	ohlcvJSON, _ := json.Marshal(stockData.OHLCV)
+
+	// Ringkasan sentimen dari berita
+	newsSummaryText := ""
+	if summary != nil {
+		newsSummaryText = fmt.Sprintf(`
+### INPUT BERITA TERKINI
+Berikut adalah ringkasan berita untuk saham %s selama periode %s hingga %s:
+- Sentimen utama: %s
+- Dampak terhadap harga: %s
+- Key issues: %s
+- Ringkasan singkat: %s
+- Confidence score: %.2f
+- Saran tindakan: %s
+- Alasan: %s
+
+**Gunakan informasi ini sebagai konteks eksternal saat menganalisis data teknikal.**
+`,
+			summary.StockCode,
+			summary.SummaryStart.Format("2006-01-02"),
+			summary.SummaryEnd.Format("2006-01-02"),
+			summary.SummarySentiment,
+			summary.SummaryImpact,
+			strings.Join(summary.KeyIssues, ", "),
+			summary.ShortSummary,
+			summary.SummaryConfidenceScore,
+			summary.SuggestedAction,
+			summary.Reasoning,
+		)
+	}
+
+	prompt := fmt.Sprintf(`
+### PERAN ANDA
+Anda adalah analis teknikal profesional dengan pengalaman lebih dari 10 tahun di pasar saham Indonesia. Tugas Anda adalah melakukan analisis teknikal dan memberikan sinyal trading **swing jangka pendek (1-5 hari)** berdasarkan data harga (OHLC) dan berita pasar untuk saham %s.
+
+### TUJUAN
+Berikan rekomendasi trading dalam format JSON berdasarkan:
+- Analisis tren teknikal dan indikator (EMA, RSI, MACD, Bollinger Bands, volume, candlestick)
+- Struktur pasar, support/resistance
+- Konteks berita terbaru
+- Manajemen risiko ketat: Hanya berikan sinyal **BUY** jika **risk/reward ratio ≥ 1:3**
+
+%s
+
+
+### INPUT DATA HARGA (OHLC %s terakhir)
+(Data OHLC seperti sebelumnya, tidak perlu diubah di sini) :
+%s
+
+### HARGA PASAR SAAT INI
+%.2f (ini adalah harga pasar saat ini)
+
+### KRITERIA ANALISIS TEKNIKAL
+Analisis teknikal yang diperlukan:
+1. Trend: BULLISH/BEARISH/SIDEWAYS
+2. Technical indicators:
+   - EMA signal (BULLISH, BEARISH, NEUTRAL)
+   - RSI signal (OVERBOUGHT, OVERSOLD, NEUTRAL)
+   - MACD signal (BULLISH, BEARISH, NEUTRAL)
+   - Bollinger Bands position (UPPER/MIDDLE/LOWER)
+3. Support dan resistance levels
+4. Volume trend (HIGH/NORMAL/LOW) dan momentum
+5. Candlestick pattern terbaru
+6. Technical score (0-100)
+
+### PANDUAN MANAJEMEN RISIKO
+- Berikan **BUY signal** hanya jika:
+  - Risk/reward ratio ≥ 1:3
+  - Trend, indikator, dan volume mendukung
+- Cut loss berdasarkan support kuat
+- Target price harus realistis dan berdasarkan resistance  
+- Maksimal holding 1-5 hari
+- Ulangi analisis jika syarat tidak terpenuhi dan output sinyal: HOLD
+
+### FORMAT OUTPUT (JSON):
+{
+  "symbol": "%s",
+  "analysis_date": "%s",
+  "signal": "BUY|HOLD",
+  "max_holding_period_days": (1 sampai 5 hari),
+  "technical_analysis": {
+    "trend": "BULLISH|BEARISH|SIDEWAYS",
+    "short_term_trend": "BULLISH|BEARISH|SIDEWAYS",
+    "medium_term_trend": "BULLISH|BEARISH|SIDEWAYS",
+    "ema_signal": "BULLISH|BEARISH|NEUTRAL",
+    "rsi_signal": "OVERBOUGHT|OVERSOLD|NEUTRAL",
+    "macd_signal": "BULLISH|BEARISH|NEUTRAL",
+    "bollinger_bands_position": "UPPER|MIDDLE|LOWER",
+    "support_level": 8500,
+    "resistance_level": 9200,
+    "key_support_levels": [8500, 8400, 8300],
+    "key_resistance_levels": [9200, 9300, 9400],
+    "volume_trend": "HIGH|NORMAL|LOW",
+    "volume_confirmation": "POSITIVE|NEGATIVE|NEUTRAL",
+    "momentum": "STRONG|MODERATE|WEAK",
+    "candlestick_pattern": "BULLISH|BEARISH|NEUTRAL",
+    "market_structure": "UPTREND|DOWNTREND|SIDEWAYS",
+    "trend_strength": "STRONG|MODERATE|WEAK",
+    "breakout_potential": "HIGH|MEDIUM|LOW",
+    "technical_score": 85
+  },
+  "recommendation": {
+    "action": "BUY|HOLD",
+    "buy_price": (Harga pembelian),
+    "target_price": (Harga target - risk_reward_ratio ≥ 1:3),
+    "cut_loss": (Harga cut loss),
+    "confidence_level": (Confidence level 0-100),
+    "reasoning": "Analisis teknikal menunjukkan momentum bullish dengan volume mendukung. EMA 9 di atas EMA 21, RSI 65.5 netral-positif, MACD bullish. Support 8500, resistance 9200. Risk/reward ratio menguntungkan.",
+    "risk_reward_analysis": {
+      "potential_profit": 450,
+      "potential_profit_percentage": 5.14,
+      "potential_loss": 350,
+      "potential_loss_percentage": 4.0,
+      "risk_reward_ratio": 1.29,
+      "risk_level": "LOW|MEDIUM|HIGH",
+      "expected_holding_period": "3-5 days",
+      "success_probability": 75
+    }
+  },
+  "risk_level": "LOW|MEDIUM|HIGH",
+  "technical_summary": {
+    "overall_signal": "BULLISH",
+    "trend_strength": "STRONG",
+    "volume_support": "HIGH",
+    "momentum": "POSITIVE",
+    "risk_level": "LOW",
+    "confidence_level": (Confidence level 0-100),
+    "key_insights": [
+      "Trend bullish dengan volume mendukung",
+      "Technical indicators positif",
+      "Support dan resistance teridentifikasi",
+      "Risk/reward ratio menguntungkan"
+    ]
+  },
+  "news_summary":{ (JIKA ADA DATA NEWS SUMMARY)
+    "confidence_score": (Confidence score 0.0 - 1.0),
+    "sentiment": "positive, negative, neutral, mixed",
+    "impact": "bullish, bearish, sideways"
+    "key_issues": ["issue1", "issue2", "issue3"]
+  }
+}`, symbol, newsSummaryText, stockData.Range, string(ohlcvJSON), stockData.MarketPrice, symbol, utils.TimeNowWIB().Format("2006-01-02T15:04:05-07:00"))
+
+	return prompt
 }

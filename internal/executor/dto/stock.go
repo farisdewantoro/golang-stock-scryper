@@ -11,6 +11,8 @@ type StockOHLCV struct {
 
 type StockData struct {
 	MarketPrice float64      `json:"market_price"`
+	Range       string       `json:"range"`
+	Interval    string       `json:"interval"`
 	OHLCV       []StockOHLCV `json:"ohlc"`
 }
 

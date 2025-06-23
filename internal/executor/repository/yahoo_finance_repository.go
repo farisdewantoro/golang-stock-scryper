@@ -9,6 +9,7 @@ import (
 	"golang-stock-scryper/internal/executor/config"
 	"golang-stock-scryper/internal/executor/dto"
 	"golang-stock-scryper/pkg/logger"
+	"golang-stock-scryper/pkg/utils"
 	"io"
 	"net/http"
 	"net/url"
@@ -52,7 +53,13 @@ func (r *yahooFinanceRepository) Get(ctx context.Context, param dto.GetStockData
 	// Build URL with query parameters
 	baseURL := r.cfg.YahooFinance.BaseURL + "/" + param.StockCode
 	params := url.Values{}
-	params.Add("range", param.Range)
+
+	period1, period2 := r.MapPeriodeStringToUnix(param.Range)
+	if period1 == 0 || period2 == 0 {
+		return nil, fmt.Errorf("invalid period")
+	}
+	params.Add("period1", fmt.Sprintf("%d", period1))
+	params.Add("period2", fmt.Sprintf("%d", period2))
 	params.Add("interval", param.Interval)
 	params.Add("includePrePost", "false")
 	params.Add("events", "div,split")
@@ -167,4 +174,30 @@ func (r *yahooFinanceRepository) Get(ctx context.Context, param dto.GetStockData
 		MarketPrice: marketPrice,
 		OHLCV:       ohlcvData,
 	}, nil
+}
+
+// MapPeriodeStringToUnix convert days to unix timestamp
+func (r *yahooFinanceRepository) MapPeriodeStringToUnix(periode string) (int64, int64) {
+
+	now := utils.TimeNowWIB()
+	switch periode {
+	case "1d":
+		return now.AddDate(0, 0, -1).Unix(), now.Unix()
+	case "14d":
+		return now.AddDate(0, 0, -14).Unix(), now.Unix()
+	case "1w":
+		return now.AddDate(0, 0, -7).Unix(), now.Unix()
+	case "1m":
+		return now.AddDate(0, 0, -30).Unix(), now.Unix()
+	case "2m":
+		return now.AddDate(0, 0, -60).Unix(), now.Unix()
+	case "3m":
+		return now.AddDate(0, 0, -90).Unix(), now.Unix()
+	case "6m":
+		return now.AddDate(0, 0, -180).Unix(), now.Unix()
+	case "1y":
+		return now.AddDate(0, 0, -365).Unix(), now.Unix()
+	default:
+		return 0, 0
+	}
 }
