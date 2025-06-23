@@ -139,7 +139,7 @@ func (s *stockAnalyzerService) Analyze(ctx context.Context, stockCode string, in
 		StockCode:       stockCode,
 		Interval:        interval,
 		Range:           rangeData,
-		Signal:          geminiResp.Signal,
+		Signal:          geminiResp.Recommendation.Action,
 		ConfidenceScore: float64(geminiResp.Recommendation.ConfidenceLevel),
 		TechnicalScore:  geminiResp.TechnicalAnalysis.TechnicalScore,
 		NewsScore:       geminiResp.NewsSummary.ConfidenceScore,

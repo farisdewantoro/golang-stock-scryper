@@ -359,7 +359,6 @@ Analisis teknikal yang diperlukan:
 {
   "symbol": "%s",
   "analysis_date": "%s",
-  "signal": "BUY|HOLD",
   "max_holding_period_days": (1 sampai 5 hari),
   "technical_analysis": {
     "trend": "BULLISH|BEARISH|SIDEWAYS",

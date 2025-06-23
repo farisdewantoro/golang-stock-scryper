@@ -42,36 +42,12 @@ type NewsSummaryResult struct {
 type IndividualAnalysisResponse struct {
 	Symbol               string            `json:"symbol"`
 	AnalysisDate         time.Time         `json:"analysis_date"`
-	Signal               string            `json:"signal"`
-	DataInfo             DataInfo          `json:"data_info,omitempty"`
-	OHLCVAnalysis        OHLCVAnalysis     `json:"ohlcv_analysis,omitempty"`
 	TechnicalAnalysis    TechnicalAnalysis `json:"technical_analysis"`
 	Recommendation       Recommendation    `json:"recommendation"`
 	RiskLevel            string            `json:"risk_level"`
 	TechnicalSummary     TechnicalSummary  `json:"technical_summary"`
 	MaxHoldingPeriodDays int               `json:"max_holding_period_days,omitempty"`
 	NewsSummary          NewsSummary       `json:"news_summary,omitempty"`
-}
-
-// OHLCV Analysis
-type OHLCVAnalysis struct {
-	Open        float64 `json:"open"`
-	High        float64 `json:"high"`
-	Low         float64 `json:"low"`
-	Close       float64 `json:"close"`
-	Volume      int64   `json:"volume"`
-	Explanation string  `json:"explanation"`
-}
-
-// Data Information
-type DataInfo struct {
-	Interval    string    `json:"interval"`
-	Range       string    `json:"range"`
-	StartDate   time.Time `json:"start_date"`
-	EndDate     time.Time `json:"end_date"`
-	DataPoints  int       `json:"data_points"`
-	Source      string    `json:"source"`
-	MarketPrice float64   `json:"market_price"`
 }
 
 // Technical Analysis
