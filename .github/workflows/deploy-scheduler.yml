@@ -1,4 +1,4 @@
-name: Build and Deploy to Railway
+name: Scheduler Service - Build and Deploy to Railway
 
 on:
   push:
