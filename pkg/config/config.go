@@ -1,6 +1,7 @@
 package config
 
 import (
+	"log"
 	"strings"
 
 	"github.com/spf13/viper"
@@ -58,7 +59,7 @@ func Load(path string, config interface{}) error {
 	viper.AutomaticEnv()
 
 	if err := viper.ReadInConfig(); err != nil {
-		return err
+		log.Println("Failed to read config file .env config try read from environment variables")
 	}
 
 	return viper.Unmarshal(config)
