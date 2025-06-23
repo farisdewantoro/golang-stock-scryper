@@ -35,7 +35,7 @@ WORKDIR /app
 COPY --from=builder /app/scheduler-service .
 
 # Copy configuration files (optional, can be mounted via volume)
-# COPY configs/config-scheduler.yaml /app/configs/config-scheduler.yaml
+COPY configs/config-scheduler.yaml /app/configs/config-scheduler.yaml
 
 # Expose the port the service runs on
 EXPOSE 8080

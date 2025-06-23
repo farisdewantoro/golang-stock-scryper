@@ -35,7 +35,7 @@ WORKDIR /app
 COPY --from=builder /app/executor-service .
 
 # Copy configuration files (optional, can be mounted via volume)
-# COPY configs/config-executor.yaml /app/configs/config-executor.yaml
+COPY configs/config-executor.yaml /app/configs/config-executor.yaml
 
 # Command to run the application
 # The actual command might depend on how configuration is passed
