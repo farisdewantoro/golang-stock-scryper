@@ -192,9 +192,9 @@ func FormatAnalysisMessage(analysis *dto.IndividualAnalysisResponse) string {
 
 	// Recommendation
 	sb.WriteString("💡 **Recommendation:**\n")
-	sb.WriteString(fmt.Sprintf("• 💵 Buy Price: $%.2f\n", analysis.Recommendation.BuyPrice))
-	sb.WriteString(fmt.Sprintf("• 🎯 Target Price: $%.2f\n", analysis.Recommendation.TargetPrice))
-	sb.WriteString(fmt.Sprintf("• 🛡 Stop Loss: $%.2f\n", analysis.Recommendation.CutLoss))
+	sb.WriteString(fmt.Sprintf("• 💵 Buy Price: $%d\n", int(analysis.Recommendation.BuyPrice)))
+	sb.WriteString(fmt.Sprintf("• 🎯 Target Price: $%d\n", int(analysis.Recommendation.TargetPrice)))
+	sb.WriteString(fmt.Sprintf("• 🛡 Stop Loss: $%d\n", int(analysis.Recommendation.CutLoss)))
 	sb.WriteString(fmt.Sprintf("• 🔁 Risk/Reward Ratio: %.2f\n", analysis.Recommendation.RiskRewardRatio))
 	sb.WriteString(fmt.Sprintf("• 📊 Confidence: %d%%\n\n", analysis.Recommendation.ConfidenceLevel))
 	// Reasoning
@@ -208,8 +208,8 @@ func FormatAnalysisMessage(analysis *dto.IndividualAnalysisResponse) string {
 	sb.WriteString(fmt.Sprintf("• MACD: %s\n", analysis.TechnicalAnalysis.MACDSignal))
 	sb.WriteString(fmt.Sprintf("• Momentum: %s\n", analysis.TechnicalAnalysis.Momentum))
 	sb.WriteString(fmt.Sprintf("• Bollinger Bands Position: %s\n", analysis.TechnicalAnalysis.BollingerBandsPosition))
-	sb.WriteString(fmt.Sprintf("• Support Level: $%.2f\n", analysis.TechnicalAnalysis.SupportLevel))
-	sb.WriteString(fmt.Sprintf("• Resistance Level: $%.2f\n", analysis.TechnicalAnalysis.ResistanceLevel))
+	sb.WriteString(fmt.Sprintf("• Support Level: $%d\n", int(analysis.TechnicalAnalysis.SupportLevel)))
+	sb.WriteString(fmt.Sprintf("• Resistance Level: $%d\n", int(analysis.TechnicalAnalysis.ResistanceLevel)))
 	sb.WriteString(fmt.Sprintf("• Technical Score: %d/100\n", analysis.TechnicalAnalysis.TechnicalScore))
 	if len(analysis.TechnicalAnalysis.KeyInsights) > 0 {
 		sb.WriteString("\n📌 **Technical Insights:**\n")
@@ -250,13 +250,13 @@ func FormatPositionMonitoringMessage(position *dto.PositionMonitoringResponse) s
 	ageDays := int(time.Since(position.BuyDate).Hours() / 24)
 
 	sb.WriteString(fmt.Sprintf("📊 **Position Update: %s**\n", position.Symbol))
-	sb.WriteString(fmt.Sprintf("💰 Buy: $%.2f | Current: $%.2f %s\n", position.BuyPrice, position.MarketPrice, unrealizedPnLPercentageStr))
+	sb.WriteString(fmt.Sprintf("💰 Buy: $%d | Current: $%d %s\n", int(position.BuyPrice), int(position.MarketPrice), unrealizedPnLPercentageStr))
 	sb.WriteString(fmt.Sprintf("📈 Age: %d days | Remaining: %d days\n\n", ageDays, daysRemaining))
 
 	// Recommendation
 	sb.WriteString("💡 **Recommendation:**\n")
-	sb.WriteString(fmt.Sprintf("• 🎯 Target Price: $%.2f\n", position.Recommendation.TargetPrice))
-	sb.WriteString(fmt.Sprintf("• 🛡 Stop Loss: $%.2f\n", position.Recommendation.CutLoss))
+	sb.WriteString(fmt.Sprintf("• 🎯 Target Price: $%d\n", int(position.Recommendation.TargetPrice)))
+	sb.WriteString(fmt.Sprintf("• 🛡 Stop Loss: $%d\n", int(position.Recommendation.CutLoss)))
 	sb.WriteString(fmt.Sprintf("• 🔁 Risk/Reward Ratio: %.2f\n", position.Recommendation.RiskRewardRatio))
 	sb.WriteString(fmt.Sprintf("• 📊 Confidence: %d%%\n\n", position.Recommendation.ConfidenceLevel))
 	// Reasoning
@@ -276,8 +276,8 @@ func FormatPositionMonitoringMessage(position *dto.PositionMonitoringResponse) s
 	sb.WriteString(fmt.Sprintf("• MACD: %s\n", position.TechnicalAnalysis.MACDSignal))
 	sb.WriteString(fmt.Sprintf("• Momentum: %s\n", position.TechnicalAnalysis.Momentum))
 	sb.WriteString(fmt.Sprintf("• Bollinger Bands Position: %s\n", position.TechnicalAnalysis.BollingerBandsPosition))
-	sb.WriteString(fmt.Sprintf("• Support Level: $%.2f\n", position.TechnicalAnalysis.SupportLevel))
-	sb.WriteString(fmt.Sprintf("• Resistance Level: $%.2f\n", position.TechnicalAnalysis.ResistanceLevel))
+	sb.WriteString(fmt.Sprintf("• Support Level: $%d\n", int(position.TechnicalAnalysis.SupportLevel)))
+	sb.WriteString(fmt.Sprintf("• Resistance Level: $%d\n", int(position.TechnicalAnalysis.ResistanceLevel)))
 	sb.WriteString(fmt.Sprintf("• Technical Score: %d/100\n", position.TechnicalAnalysis.TechnicalScore))
 	if len(position.TechnicalAnalysis.KeyInsights) > 0 {
 		sb.WriteString("\n📌 **Technical Insights:**\n")
