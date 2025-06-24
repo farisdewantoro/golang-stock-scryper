@@ -159,6 +159,10 @@ func (r *openaiAIRepository) SendRequest(ctx context.Context, prompt string) (*d
 		return nil, fmt.Errorf("failed to decode response body: %w", err)
 	}
 
+	if int(openaiResp.Usage.TotalTokens) > r.cfg.OpenAI.MaxTokenPerMinute/2 {
+		r.logger.Warn("Token has exceeded 50% of the limit", logger.IntField("remaining", r.tokenLimiter.GetRemaining()))
+	}
+
 	if err := r.tokenLimiter.Wait(ctx, openaiResp.Usage.TotalTokens); err != nil {
 		r.logger.Error("failed to wait for token limit", logger.ErrorField(err))
 		return nil, fmt.Errorf("failed to wait for token limit: %w", err)
