@@ -72,11 +72,11 @@ Anda adalah analis teknikal berpengalaman di pasar saham Indonesia. Tugas Anda a
   "symbol": "%s",
   "technical_analysis": {
     "trend": "BULLISH|BEARISH|SIDEWAYS",
-    "momentum": "WEAK_UP|STRONG_UP|FLAT|WEAK_DOWN|STRONG_DOWN",
-    "ema_signal": "BULLISH|BEARISH|NO_CROSS",
+    "momentum": "WEAKUP|STRONGUP|FLAT|WEAKDOWN|STRONGDOWN",
+    "ema_signal": "BULLISH|BEARISH|NOCROSS",
     "rsi_signal": "NEUTRAL|OVERBOUGHT|OVERSOLD",
     "macd_signal": "BULLISH|BEARISH|NEUTRAL",
-    "bollinger_bands_position": "UPPER_BAND|LOWER_BAND|MIDDLE_BAND",
+    "bollinger_bands_position": "UPPERBAND|LOWERBAND|MIDDLEBAND",
     "support_level": 1420,
     "resistance_level": 1615,
 	"key_insights": [
@@ -204,11 +204,11 @@ Pastikan field "exit_reasoning" dan "exit_conditions" selalu ditulis dalam bahas
   "symbol": "%s",
   "technical_analysis": {
     "trend": "BULLISH|BEARISH|SIDEWAYS",
-    "momentum": "WEAK_UP|STRONG_UP|FLAT|WEAK_DOWN|STRONG_DOWN",
-    "ema_signal": "BULLISH|BEARISH|NO_CROSS",
+    "momentum": "WEAKUP|STRONGUP|FLAT|WEAKDOWN|STRONGDOWN",
+    "ema_signal": "BULLISH|BEARISH|NOCROSS",
     "rsi_signal": "NEUTRAL|OVERBOUGHT|OVERSOLD",
     "macd_signal": "BULLISH|BEARISH|NEUTRAL",
-    "bollinger_bands_position": "UPPER_BAND|LOWER_BAND|MIDDLE_BAND",
+    "bollinger_bands_position": "UPPERBAND|LOWERBAND|MIDDLEBAND",
     "support_level": 1420,
     "resistance_level": 1615,
 	"key_insights": [
@@ -219,7 +219,7 @@ Pastikan field "exit_reasoning" dan "exit_conditions" selalu ditulis dalam bahas
     "technical_score": 85
   },
   "recommendation": {
-    "action": "HOLD|SELL|CUT_LOSS",
+    "action": "HOLD|SELL|CUTLOSS",
 	"target_exit_price": 9500,
 	"stop_loss_price": 8950,
 	"exit_reasoning": "Trend bullish dengan volume tinggi dan indikator teknikal mendukung. Berita memberikan sentimen positif tambahan.",
