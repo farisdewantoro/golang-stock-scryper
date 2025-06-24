@@ -3,6 +3,7 @@ package utils
 import (
 	"fmt"
 	"log"
+	"math"
 	"time"
 )
 
@@ -64,7 +65,7 @@ func RemainingDays(maxHoldingDays int, buyTime time.Time) int {
 
 	// Hitung selisih hari dari sekarang
 	now := time.Now()
-	remaining := int(expiredTime.Sub(now).Hours() / 24)
+	remaining := int(math.Ceil(expiredTime.Sub(now).Hours() / 24))
 
 	return remaining
 }

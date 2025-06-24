@@ -225,8 +225,7 @@ func FormatAnalysisMessage(analysis *dto.IndividualAnalysisResponse) string {
 		sb.WriteString(fmt.Sprintf("Confidence Score: %.2f\n", analysis.NewsSummary.ConfidenceScore))
 		sb.WriteString(fmt.Sprintf("Sentiment: %s\n", analysis.NewsSummary.Sentiment))
 		sb.WriteString(fmt.Sprintf("Impact: %s\n\n", analysis.NewsSummary.Impact))
-		sb.WriteString("🧐 *Reasoning:*\n")
-		sb.WriteString(fmt.Sprintf("%s\n\n", analysis.NewsSummary.Reasoning))
+		sb.WriteString(fmt.Sprintf("🧠 News Insight: \n%s\n\n", analysis.NewsSummary.Reasoning))
 	} else {
 		sb.WriteString("_Belum ada data berita terbaru yang tersedia untuk saham ini._\n\n")
 	}
@@ -294,7 +293,7 @@ func FormatPositionMonitoringMessage(position *dto.PositionMonitoringResponse) s
 		sb.WriteString(fmt.Sprintf("Confidence Score: %.2f\n", position.NewsSummary.ConfidenceScore))
 		sb.WriteString(fmt.Sprintf("Sentiment: %s\n", position.NewsSummary.Sentiment))
 		sb.WriteString(fmt.Sprintf("Impact: %s\n\n", position.NewsSummary.Impact))
-		sb.WriteString(fmt.Sprintf("Analysis: %s\n\n", position.NewsSummary.Reasoning))
+		sb.WriteString(fmt.Sprintf("🧠 News Insight: \n%s\n\n", position.NewsSummary.Reasoning))
 	} else {
 		sb.WriteString("_Belum ada data berita terbaru yang tersedia untuk saham ini._\n\n")
 	}
