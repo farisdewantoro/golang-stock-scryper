@@ -13,9 +13,11 @@ type NewsAnalysisResult struct {
 }
 
 type StreamDataStockAnalyzer struct {
-	StockCode string `json:"stock_code"`
-	Interval  string `json:"interval"`
-	Range     string `json:"range"`
+	StockCode  string `json:"stock_code"`
+	Interval   string `json:"interval"`
+	Range      string `json:"range"`
+	TelegramID int64  `json:"telegram_id"`
+	NotifyUser bool   `json:"notify_user"`
 }
 
 type StreamDataStockPositionMonitor struct {

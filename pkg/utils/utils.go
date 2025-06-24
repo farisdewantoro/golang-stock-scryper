@@ -8,6 +8,7 @@ import (
 	"log"
 	"runtime"
 	"strings"
+	"unicode"
 	"unicode/utf8"
 )
 
@@ -102,4 +103,15 @@ func EscapeMarkdownV2(text string) string {
 		"!", "\\!",
 	)
 	return replacer.Replace(text)
+}
+
+func CapitalizeSentence(input string) string {
+	input = strings.TrimSpace(input)
+	if input == "" {
+		return ""
+	}
+
+	runes := []rune(input)
+	runes[0] = unicode.ToUpper(runes[0])
+	return string(runes)
 }

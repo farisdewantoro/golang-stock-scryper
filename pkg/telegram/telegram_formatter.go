@@ -183,3 +183,56 @@ func FormatErrorAlertMessage(time time.Time, errType string, errMsg string, data
 📄 %s
 `, utils.PrettyDate(time), errType, errMsg, data)
 }
+
+func FormatAnalysisMessage(analysis *dto.IndividualAnalysisResponse) string {
+	var sb strings.Builder
+
+	sb.WriteString(fmt.Sprintf("📊 **Analysis for %s**\n", analysis.Symbol))
+	sb.WriteString(fmt.Sprintf("📅 Date: %s\n", analysis.AnalysisDate.Format("2006-01-02 15:04:05")))
+	sb.WriteString(fmt.Sprintf("🎯 Signal: **%s**\n\n", analysis.Recommendation.Action))
+
+	// Technical Analysis Summary
+	sb.WriteString("🔧 **Technical Analysis:**\n")
+	sb.WriteString(fmt.Sprintf("• Trend: %s \n", analysis.TechnicalAnalysis.Trend))
+	sb.WriteString(fmt.Sprintf("• EMA Signal: %s\n", analysis.TechnicalAnalysis.EMASignal))
+	sb.WriteString(fmt.Sprintf("• RSI: %s\n", analysis.TechnicalAnalysis.RSISignal))
+	sb.WriteString(fmt.Sprintf("• MACD: %s\n", analysis.TechnicalAnalysis.MACDSignal))
+	sb.WriteString(fmt.Sprintf("• Momentum: %s\n", analysis.TechnicalAnalysis.Momentum))
+	sb.WriteString(fmt.Sprintf("• Bollinger Bands Position: %s\n", analysis.TechnicalAnalysis.BollingerBandsPosition))
+	sb.WriteString(fmt.Sprintf("• Support Level: $%.2f\n", analysis.TechnicalAnalysis.SupportLevel))
+	sb.WriteString(fmt.Sprintf("• Resistance Level: $%.2f\n", analysis.TechnicalAnalysis.ResistanceLevel))
+	sb.WriteString(fmt.Sprintf("• Technical Score: %d/100\n", analysis.TechnicalAnalysis.TechnicalScore))
+	if len(analysis.TechnicalAnalysis.KeyInsights) > 0 {
+		sb.WriteString("\n📌 **Key Insights:**\n")
+		for _, insight := range analysis.TechnicalAnalysis.KeyInsights {
+			sb.WriteString(fmt.Sprintf("• %s\n", utils.CapitalizeSentence(insight)))
+		}
+		sb.WriteString("\n")
+	}
+
+	// News Summary
+	sb.WriteString("📰 **News Summary Analysis:**\n")
+	sb.WriteString(fmt.Sprintf("Confidence Score: %.2f\n", analysis.NewsSummary.ConfidenceScore))
+	sb.WriteString(fmt.Sprintf("Sentiment: %s\n", analysis.NewsSummary.Sentiment))
+	sb.WriteString(fmt.Sprintf("Impact: %s\n\n", analysis.NewsSummary.Impact))
+
+	sb.WriteString("🗞 **Key Issues:**\n")
+	if len(analysis.NewsSummary.KeyIssues) > 0 {
+		for _, issue := range analysis.NewsSummary.KeyIssues {
+			sb.WriteString(fmt.Sprintf("• %s\n", utils.CapitalizeSentence(issue)))
+		}
+	}
+	sb.WriteString("\n")
+
+	// Recommendation
+	sb.WriteString("💡 **Recommendation:**\n")
+	sb.WriteString(fmt.Sprintf("• 💵 Buy Price: $%.2f\n", analysis.Recommendation.BuyPrice))
+	sb.WriteString(fmt.Sprintf("• 🎯 Target Price: $%.2f\n", analysis.Recommendation.TargetPrice))
+	sb.WriteString(fmt.Sprintf("• 🛡 Stop Loss: $%.2f\n", analysis.Recommendation.CutLoss))
+	sb.WriteString(fmt.Sprintf("• 🔁 Risk/Reward Ratio: %.2f\n", analysis.Recommendation.RiskRewardRatio))
+	sb.WriteString(fmt.Sprintf("• 📊 Confidence: %d%%\n\n", analysis.Recommendation.ConfidenceLevel))
+	// Reasoning
+	sb.WriteString(fmt.Sprintf("🧠 **Reasoning:**\n %s\n\n", analysis.Recommendation.Reasoning))
+
+	return sb.String()
+}

@@ -20,7 +20,7 @@ import (
 type StockAnalyzerService interface {
 	ProcessTask(ctx context.Context)
 	ProcessRetries(ctx context.Context)
-	Execute(ctx context.Context, stockCode string, interval string, rangeData string) error
+	Execute(ctx context.Context, data dto.StreamDataStockAnalyzer) error
 }
 
 type stockAnalyzerService struct {
@@ -93,7 +93,7 @@ func (s *stockAnalyzerService) ProcessTask(ctx context.Context) {
 
 	s.log.Debug("Processing stock analyzer task", logger.StringField("stock_code", streamData.StockCode), logger.StringField("interval", streamData.Interval), logger.StringField("range", streamData.Range))
 
-	if err := s.Execute(ctx, streamData.StockCode, streamData.Interval, streamData.Range); err != nil {
+	if err := s.Execute(ctx, streamData); err != nil {
 		s.log.Error("Failed to analyze stock", logger.ErrorField(err), logger.Field("message_id", message.ID), logger.StringField("stock_code", streamData.StockCode), logger.StringField("interval", streamData.Interval), logger.StringField("range", streamData.Range))
 		return
 	}
@@ -106,24 +106,24 @@ func (s *stockAnalyzerService) ProcessTask(ctx context.Context) {
 
 }
 
-func (s *stockAnalyzerService) Execute(ctx context.Context, stockCode string, interval string, rangeData string) error {
+func (s *stockAnalyzerService) Execute(ctx context.Context, streamData dto.StreamDataStockAnalyzer) error {
 	stockData, err := s.yahooFinance.Get(ctx, dto.GetStockDataParam{
-		StockCode: stockCode,
-		Interval:  interval,
-		Range:     rangeData,
+		StockCode: streamData.StockCode,
+		Interval:  streamData.Interval,
+		Range:     streamData.Range,
 	})
 	if err != nil {
 		s.log.Error("Failed to get stock data", logger.ErrorField(err))
 		return err
 	}
 
-	lastSummary, err := s.stockNewsSummaryRepo.GetLast(ctx, time.Now().Add(-time.Hour*24), stockCode)
+	lastSummary, err := s.stockNewsSummaryRepo.GetLast(ctx, time.Now().Add(-time.Hour*24), streamData.StockCode)
 	if err != nil {
 		s.log.Error("Failed to get last stock news summary", logger.ErrorField(err))
 		return err
 	}
 
-	geminiResp, err := s.aiRepo.AnalyzeStock(ctx, stockCode, stockData, lastSummary)
+	geminiResp, err := s.aiRepo.AnalyzeStock(ctx, streamData.StockCode, stockData, lastSummary)
 	if err != nil {
 		s.log.Error("Failed to analyze stock", logger.ErrorField(err))
 		return err
@@ -136,9 +136,9 @@ func (s *stockAnalyzerService) Execute(ctx context.Context, stockCode string, in
 	}
 
 	err = s.stockSignalRepo.Create(ctx, &entity.StockSignal{
-		StockCode:       stockCode,
-		Interval:        interval,
-		Range:           rangeData,
+		StockCode:       streamData.StockCode,
+		Interval:        streamData.Interval,
+		Range:           streamData.Range,
 		Signal:          geminiResp.Recommendation.Action,
 		ConfidenceScore: float64(geminiResp.Recommendation.ConfidenceLevel),
 		TechnicalScore:  geminiResp.TechnicalAnalysis.TechnicalScore,
@@ -149,6 +149,12 @@ func (s *stockAnalyzerService) Execute(ctx context.Context, stockCode string, in
 	if err != nil {
 		s.log.Error("Failed to create stock signal", logger.ErrorField(err))
 		return err
+	}
+
+	if streamData.NotifyUser {
+		if err := s.telegramBot.SendMessageUser(telegram.FormatAnalysisMessage(geminiResp), streamData.TelegramID); err != nil {
+			s.log.Error("Failed to send notification", logger.ErrorField(err))
+		}
 	}
 
 	return nil
@@ -222,7 +228,7 @@ func (s *stockAnalyzerService) ProcessRetries(ctx context.Context) {
 		return
 	}
 
-	if err := s.Execute(ctx, streamData.StockCode, streamData.Interval, streamData.Range); err != nil {
+	if err := s.Execute(ctx, streamData); err != nil {
 		s.log.Error("Failed to analyze stock", logger.ErrorField(err), logger.Field("message_id", msg.ID), logger.StringField("stock_code", streamData.StockCode), logger.StringField("interval", streamData.Interval), logger.StringField("range", streamData.Range))
 
 		if pendingInfo[0].RetryCount+1 >= int64(s.cfg.Executor.RedisStreamStockAnalyzerMaxRetry) {

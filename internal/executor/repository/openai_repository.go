@@ -133,6 +133,8 @@ func (r *openaiAIRepository) SendRequest(ctx context.Context, prompt string) (*d
 		return nil, fmt.Errorf("failed to marshal payload: %w", err)
 	}
 
+	r.logger.Debug("Sending request to OpenAI API", logger.StringField("url", r.cfg.OpenAI.BaseURL), logger.StringField("prompt", prompt))
+
 	req, err := http.NewRequestWithContext(ctx, "POST", r.cfg.OpenAI.BaseURL, bytes.NewBuffer(jsonPayload))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create new http request: %w", err)
