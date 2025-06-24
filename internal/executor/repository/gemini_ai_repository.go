@@ -15,6 +15,7 @@ import (
 	"golang-stock-scryper/internal/executor/dto"
 	"golang-stock-scryper/pkg/logger"
 	"golang-stock-scryper/pkg/ratelimit"
+	"golang-stock-scryper/pkg/utils"
 
 	"golang.org/x/time/rate"
 	"google.golang.org/genai"
@@ -173,7 +174,12 @@ func (r *geminiAIRepository) AnalyzeStock(ctx context.Context, symbol string, st
 		return nil, err
 	}
 
-	return r.parseIndividualAnalysisResponse(geminiResp)
+	result, err := r.parseIndividualAnalysisResponse(geminiResp)
+	if err != nil {
+		return nil, err
+	}
+	result.AnalysisDate = utils.TimeNowWIB()
+	return result, nil
 }
 
 func (r *geminiAIRepository) PositionMonitoring(ctx context.Context, request *dto.PositionMonitoringRequest, stockData *dto.StockData, summary *entity.StockNewsSummary) (*dto.PositionMonitoringResponse, error) {
@@ -189,6 +195,7 @@ func (r *geminiAIRepository) PositionMonitoring(ctx context.Context, request *dt
 	result.BuyPrice = request.BuyPrice
 	result.BuyDate = request.BuyTime
 	result.MaxHoldingPeriodDays = request.MaxHoldingPeriodDays
+	result.AnalysisDate = utils.TimeNowWIB()
 	if err != nil {
 		return nil, err
 	}

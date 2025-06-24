@@ -90,6 +90,7 @@ type PositionMonitoringRequest struct {
 }
 
 type PositionMonitoringResponse struct {
+	AnalysisDate         time.Time              `json:"analysis_date"`
 	Symbol               string                 `json:"symbol"`
 	MarketPrice          float64                `json:"market_price"`
 	BuyDate              time.Time              `json:"buy_date"`

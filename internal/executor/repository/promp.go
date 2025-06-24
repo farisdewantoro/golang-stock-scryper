@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"golang-stock-scryper/internal/entity"
 	"golang-stock-scryper/internal/executor/dto"
-	"golang-stock-scryper/pkg/utils"
 	"strings"
 	"time"
 )
@@ -71,7 +70,6 @@ Anda adalah analis teknikal berpengalaman di pasar saham Indonesia. Tugas Anda a
 ### FORMAT OUTPUT (JSON)
 {
   "symbol": "%s",
-  "analysis_date": "%s",
   "technical_analysis": {
     "trend": "BULLISH|BEARISH|SIDEWAYS",
     "momentum": "WEAK_UP|STRONG_UP|FLAT|WEAK_DOWN|STRONG_DOWN",
@@ -104,7 +102,7 @@ Anda adalah analis teknikal berpengalaman di pasar saham Indonesia. Tugas Anda a
     "key_issues": ["EV", "industri", "investasi asing"]
   }
 }
-`, symbol, newsSummaryText, stockData.Range, string(ohlcvJSON), stockData.MarketPrice, symbol, utils.TimeNowWIB().Format("2006-01-02T15:04:05-07:00"))
+`, symbol, newsSummaryText, stockData.Range, string(ohlcvJSON), stockData.MarketPrice, symbol)
 	return prompt
 }
 
