@@ -40,8 +40,8 @@ func (c *client) SendMessage(text string) error {
 
 // SendMessageUser sends a message to user
 func (c *client) SendMessageUser(text string, chatID int64) error {
-	msg := tgbotapi.NewMessage(chatID, text)
-	msg.ParseMode = tgbotapi.ModeMarkdown // Using Markdown for formatting
+	msg := tgbotapi.NewMessage(chatID, utils.EscapeMarkdownV2(text))
+	msg.ParseMode = tgbotapi.ModeMarkdownV2 // Using Markdown for formatting
 	_, err := c.bot.Send(msg)
 	return err
 }
