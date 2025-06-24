@@ -35,6 +35,7 @@ type Gemini struct {
 	Model               string `mapstructure:"model"`
 	MaxRequestPerMinute int    `mapstructure:"max_request_per_minute"`
 	MaxTokenPerMinute   int    `mapstructure:"max_token_per_minute"`
+	BaseURL             string `mapstructure:"base_url"`
 }
 
 // AI holds configuration for AI providers.
@@ -54,6 +55,14 @@ type YahooFinance struct {
 	MaxRequestPerMinute int    `mapstructure:"max_request_per_minute"`
 }
 
+type OpenAI struct {
+	APIKey              string `mapstructure:"api_key"`
+	Model               string `mapstructure:"model"`
+	MaxRequestPerMinute int    `mapstructure:"max_request_per_minute"`
+	MaxTokenPerMinute   int    `mapstructure:"max_token_per_minute"`
+	BaseURL             string `mapstructure:"base_url"`
+}
+
 // Config holds the full configuration for the executor service.
 type Config struct {
 	App          config.App      `mapstructure:"app"`
@@ -66,6 +75,7 @@ type Config struct {
 	AI           AI              `mapstructure:"ai"`
 	Telegram     Telegram        `mapstructure:"telegram"`
 	YahooFinance YahooFinance    `mapstructure:"yahoo_finance"`
+	OpenAI       OpenAI          `mapstructure:"openai"`
 }
 
 // Load loads the executor configuration from the given path.

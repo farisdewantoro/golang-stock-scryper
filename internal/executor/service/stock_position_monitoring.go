@@ -29,7 +29,7 @@ type stockPositionMonitoringService struct {
 	cfg                         *config.Config
 	log                         *logger.Logger
 	redisClient                 *redis.Client
-	geminiRepoAI                repository.GeminiAIRepository
+	aiRepo                      repository.AIRepository
 	yahooFinance                repository.YahooFinanceRepository
 	stockPositionRepo           repository.StockPositionsRepository
 	stockNewsSummaryRepo        repository.StockNewsSummaryRepository
@@ -39,7 +39,7 @@ type stockPositionMonitoringService struct {
 
 func NewStockPositionMonitoringService(cfg *config.Config, log *logger.Logger,
 	redisClient *redis.Client,
-	geminiRepoAI repository.GeminiAIRepository,
+	aiRepo repository.AIRepository,
 	yahooFinance repository.YahooFinanceRepository,
 	stockPositionRepo repository.StockPositionsRepository,
 	stockNewsSummaryRepo repository.StockNewsSummaryRepository,
@@ -49,7 +49,7 @@ func NewStockPositionMonitoringService(cfg *config.Config, log *logger.Logger,
 		cfg:                         cfg,
 		log:                         log,
 		redisClient:                 redisClient,
-		geminiRepoAI:                geminiRepoAI,
+		aiRepo:                      aiRepo,
 		yahooFinance:                yahooFinance,
 		stockPositionRepo:           stockPositionRepo,
 		stockNewsSummaryRepo:        stockNewsSummaryRepo,
@@ -165,7 +165,7 @@ func (s *stockPositionMonitoringService) Execute(ctx context.Context, req dto.St
 		return err
 	}
 
-	geminiResp, err := s.geminiRepoAI.PositionMonitoring(ctx, &dto.PositionMonitoringRequest{
+	aiResp, err := s.aiRepo.PositionMonitoring(ctx, &dto.PositionMonitoringRequest{
 		Symbol:               stockPosition.StockCode,
 		BuyPrice:             stockPosition.BuyPrice,
 		BuyTime:              stockPosition.BuyDate,
@@ -179,7 +179,7 @@ func (s *stockPositionMonitoringService) Execute(ctx context.Context, req dto.St
 		return err
 	}
 
-	dataJSON, err := json.Marshal(geminiResp)
+	dataJSON, err := json.Marshal(aiResp)
 	if err != nil {
 		s.log.Error("Failed to marshal gemini response", logger.ErrorField(err))
 		return err
@@ -191,10 +191,10 @@ func (s *stockPositionMonitoringService) Execute(ctx context.Context, req dto.St
 		TriggeredAlert:  stockPosition.MonitorPosition,
 		Interval:        req.Interval,
 		Range:           req.Range,
-		Signal:          geminiResp.Recommendation.Action,
-		ConfidenceScore: float64(geminiResp.Recommendation.ConfidenceLevel),
-		TechnicalScore:  float64(geminiResp.TechnicalAnalysis.TechnicalScore),
-		NewsScore:       float64(geminiResp.NewsSummary.ConfidenceScore),
+		Signal:          aiResp.Recommendation.Action,
+		ConfidenceScore: float64(aiResp.Recommendation.ConfidenceLevel),
+		TechnicalScore:  float64(aiResp.TechnicalAnalysis.TechnicalScore),
+		NewsScore:       float64(aiResp.NewsSummary.ConfidenceScore),
 		Data:            dataJSON,
 	})
 
@@ -204,7 +204,7 @@ func (s *stockPositionMonitoringService) Execute(ctx context.Context, req dto.St
 	}
 
 	shouldSendNotif := stockPosition.MonitorPosition &&
-		strings.ToLower(geminiResp.Recommendation.Action) != "hold" &&
+		strings.ToLower(aiResp.Recommendation.Action) != "hold" &&
 		req.SendNotif
 
 	if shouldSendNotif {
@@ -272,28 +272,6 @@ func (s *stockPositionMonitoringService) ProcessRetries(ctx context.Context) {
 		return
 	}
 
-	if pendingInfo[0].RetryCount >= int64(s.cfg.Executor.RedisStreamStockPositionMonitorMaxRetry) {
-		s.log.Error("pending msg retry count exceeded",
-			logger.StringField("stream", common.RedisStreamStockPositionMonitor),
-			logger.StringField("message_id", msg.ID),
-			logger.StringField("stock_code", streamData.StockCode),
-			logger.StringField("interval", streamData.Interval),
-			logger.StringField("range", streamData.Range),
-			logger.IntField("retry_count", int(pendingInfo[0].RetryCount)),
-			logger.IntField("max_retry", s.cfg.Executor.RedisStreamStockPositionMonitorMaxRetry),
-		)
-		errMsg := fmt.Sprintf("Retry count exceeded -> %s \n\n Data : | %s | %s | %s", common.RedisStreamStockPositionMonitor, streamData.StockCode, streamData.Interval, streamData.Range)
-		msgTelegram := telegram.FormatErrorAlertMessage(utils.TimeNowWIB(), errMsg)
-		if err := s.telegramBot.SendMessage(msgTelegram); err != nil {
-			s.log.Error("Failed to send telegram message retry exceeded ", logger.ErrorField(err), logger.StringField("stock_code", streamData.StockCode), logger.StringField("interval", streamData.Interval), logger.StringField("range", streamData.Range))
-		}
-		if err := s.AckNDel(ctx, common.RedisStreamStockPositionMonitor, msg.ID); err != nil {
-			s.log.Error("Failed to acknowledge and delete stock position monitor task", logger.ErrorField(err), logger.Field("message_id", msg.ID))
-			return
-		}
-		return
-	}
-
 	if err := s.Execute(ctx, dto.StreamDataStockPositionMonitor{
 		ID:        streamData.ID,
 		StockCode: streamData.StockCode,
@@ -303,6 +281,29 @@ func (s *stockPositionMonitoringService) ProcessRetries(ctx context.Context) {
 		UserID:    streamData.UserID,
 	}); err != nil {
 		s.log.Error("Failed to analyze stock", logger.ErrorField(err), logger.Field("message_id", msg.ID), logger.StringField("stock_code", streamData.StockCode), logger.StringField("interval", streamData.Interval), logger.StringField("range", streamData.Range))
+
+		if pendingInfo[0].RetryCount+1 >= int64(s.cfg.Executor.RedisStreamStockPositionMonitorMaxRetry) {
+			s.log.Error("pending msg retry count exceeded",
+				logger.StringField("stream", common.RedisStreamStockPositionMonitor),
+				logger.StringField("message_id", msg.ID),
+				logger.StringField("stock_code", streamData.StockCode),
+				logger.StringField("interval", streamData.Interval),
+				logger.StringField("range", streamData.Range),
+				logger.IntField("retry_count", int(pendingInfo[0].RetryCount+1)),
+				logger.IntField("max_retry", s.cfg.Executor.RedisStreamStockPositionMonitorMaxRetry),
+			)
+			errType := fmt.Sprintf("Retry count exceeded -> %s", common.RedisStreamStockPositionMonitor)
+			data := fmt.Sprintf("%s | %s | %s", streamData.StockCode, streamData.Interval, streamData.Range)
+			msgTelegram := telegram.FormatErrorAlertMessage(utils.TimeNowWIB(), errType, err.Error(), data)
+			if err := s.telegramBot.SendMessage(msgTelegram); err != nil {
+				s.log.Error("Failed to send telegram message retry exceeded ", logger.ErrorField(err), logger.StringField("stock_code", streamData.StockCode), logger.StringField("interval", streamData.Interval), logger.StringField("range", streamData.Range))
+			}
+			if err := s.AckNDel(ctx, common.RedisStreamStockPositionMonitor, msg.ID); err != nil {
+				s.log.Error("Failed to acknowledge and delete stock position monitor task", logger.ErrorField(err), logger.Field("message_id", msg.ID))
+				return
+			}
+			return
+		}
 		return
 	}
 

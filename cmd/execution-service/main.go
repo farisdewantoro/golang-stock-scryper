@@ -122,8 +122,7 @@ func runServe(cmd *cobra.Command, args []string) {
 	}
 
 	// Initialize AI provider
-	var analyzerRepo repository.NewsAnalyzerRepository
-	var geminiRepo repository.GeminiAIRepository
+	var aiRepo repository.AIRepository
 	switch cfg.AI.Provider {
 	case "gemini":
 		genAiClient, err := genai.NewClient(context.Background(), &genai.ClientConfig{
@@ -136,10 +135,11 @@ func runServe(cmd *cobra.Command, args []string) {
 		if err != nil {
 			appLogger.Fatal("Failed to initialize Gemini AI repository", zap.Error(err))
 		}
-		analyzerRepo = repo
-		geminiRepo = repo
+		aiRepo = repo
 	case "openrouter":
-		analyzerRepo = repository.NewOpenRouterRepository(cfg, appLogger)
+		aiRepo = repository.NewOpenRouterRepository(cfg, appLogger)
+	case "openai":
+		aiRepo = repository.NewOpenAIRepository(cfg, appLogger)
 	default:
 		appLogger.Fatal("Invalid AI provider specified in config", zap.String("provider", cfg.AI.Provider))
 	}
@@ -159,7 +159,7 @@ func runServe(cmd *cobra.Command, args []string) {
 			db.DB,
 			appLogger,
 			decoder,
-			analyzerRepo,
+			aiRepo,
 			stockMentionRepo,
 			stockNewsRepo,
 			stocksRepo,
@@ -178,7 +178,7 @@ func runServe(cmd *cobra.Command, args []string) {
 			stocksRepo,
 			stockNewsRepo,
 			stockNewsSummaryRepo,
-			geminiRepo,
+			aiRepo,
 			telegramNotifier,
 		),
 		strategy.NewStockPositionMonitorStrategy(
@@ -190,8 +190,8 @@ func runServe(cmd *cobra.Command, args []string) {
 
 	// Initialize executor service
 	executorSvc := service.NewExecutorService(cfg, redisClient.Client, jobRepo, historyRepo, appLogger, strategies)
-	stockAnalyzerSvc := service.NewStockAnalyzerService(cfg, appLogger, redisClient.Client, geminiRepo, yahooFinanceRepo, stockNewsSummaryRepo, stockSignalRepo, telegramNotifier)
-	stockPositionMonitoringSvc := service.NewStockPositionMonitoringService(cfg, appLogger, redisClient.Client, geminiRepo, yahooFinanceRepo, stockPositionsRepo, stockNewsSummaryRepo, stockPositionMonitoringRepo, telegramNotifier)
+	stockAnalyzerSvc := service.NewStockAnalyzerService(cfg, appLogger, redisClient.Client, aiRepo, yahooFinanceRepo, stockNewsSummaryRepo, stockSignalRepo, telegramNotifier)
+	stockPositionMonitoringSvc := service.NewStockPositionMonitoringService(cfg, appLogger, redisClient.Client, aiRepo, yahooFinanceRepo, stockPositionsRepo, stockNewsSummaryRepo, stockPositionMonitoringRepo, telegramNotifier)
 
 	// Initialize and start the Redis consumer
 	redisConsumer := consumer.NewRedisConsumer(cfg, redisClient.Client, executorSvc, stockAnalyzerSvc, stockPositionMonitoringSvc, appLogger)

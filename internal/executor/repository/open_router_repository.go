@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"golang-stock-scryper/internal/entity"
 	"golang-stock-scryper/internal/executor/config"
 	"golang-stock-scryper/internal/executor/dto"
 	"golang-stock-scryper/pkg/logger"
@@ -22,7 +23,7 @@ type openRouterRepository struct {
 }
 
 // NewOpenRouterRepository creates a new instance of openRouterRepository.
-func NewOpenRouterRepository(cfg *config.Config, logger *logger.Logger) NewsAnalyzerRepository {
+func NewOpenRouterRepository(cfg *config.Config, logger *logger.Logger) AIRepository {
 	return &openRouterRepository{
 		client: &http.Client{
 			Timeout: 90 * time.Second,
@@ -33,8 +34,8 @@ func NewOpenRouterRepository(cfg *config.Config, logger *logger.Logger) NewsAnal
 }
 
 // Analyze performs news analysis using the OpenRouter API.
-func (r *openRouterRepository) Analyze(ctx context.Context, title, publishedDate, content string) (*dto.NewsAnalysisResult, error) {
-	prompt := r.buildPrompt(title, publishedDate, content)
+func (r *openRouterRepository) NewsAnalyze(ctx context.Context, title, publishedDate, content string) (*dto.NewsAnalysisResult, error) {
+	prompt := BuildAnalyzeNewsPrompt(title, publishedDate, content)
 
 	requestBody := map[string]interface{}{
 		"model": r.cfg.OpenRouter.Model, // A cost-effective and fast model
@@ -132,38 +133,13 @@ func (r *openRouterRepository) Analyze(ctx context.Context, title, publishedDate
 	return &result, nil
 }
 
-func (r *openRouterRepository) buildPrompt(title, publishedDate, content string) string {
-	return fmt.Sprintf(`Anda adalah analis pasar modal Indonesia yang ahli dalam mengaitkan peristiwa berita dengan saham. Tolong analisa dan berikan output dalam JSON seperti:
-
-Kriteria analisis:
-- Sentimen: "positive", "neutral", atau "negative"
-- Dampak harga: "bullish", "bearish", atau "sideways"
-- Confidence Score: nilai antara 0.0 (sangat tidak yakin) hingga 1.0 (sangat yakin)
-- News Impact Score: nilai antara 0.0 (sangat tidak berdampak / tidak berkualitas) hingga 1.0 (sangat berdampak / berkualitas)
-- News Summary: ringkasan singkat dari berita tersebut
-- News Key Issue: array dari isu-isu penting yang terkait dengan berita tersebut ('dividen', 'laporan keuangan', 'analisa', 'dan key issue lainnya (kamu define sendiri)')
-
-Tolong analisa dan berikan output dalam format JSON dengan struktur berikut:
-{
-  "summary": "ANTM akan membagikan dividen terbesar dalam sejarah perusahaan. Langkah ini diambil karena laba bersih perusahaan naik signifikan sepanjang 2024...",
-  "key_issue": ["dividen", "laporan keuangan", "analisa"],
-  "impact_score": 0.88,
-  "stock_mentions":[
-    {
-      "stock_code": "ANTM",
-      "sentiment": "positive",
-      "impact": "bullish",
-      "confidence_score": 0.88
-    }
-  ]
+func (r *openRouterRepository) GenerateNewsSummary(ctx context.Context, stockCode string, newsItems []entity.StockNews) (*dto.NewsSummaryResult, error) {
+	return nil, nil
+}
+func (r *openRouterRepository) AnalyzeStock(ctx context.Context, symbol string, stockData *dto.StockData, summary *entity.StockNewsSummary) (*dto.IndividualAnalysisResponse, error) {
+	return nil, nil
 }
 
-Berikut Data News:
-Judul: %s
-Tanggal Publish: %s
-Raw Content: %s
-
-
-Jawaban hanya dalam format JSON saja.
-`, title, publishedDate, content)
+func (r *openRouterRepository) PositionMonitoring(ctx context.Context, request *dto.PositionMonitoringRequest, stockData *dto.StockData, summary *entity.StockNewsSummary) (*dto.PositionMonitoringResponse, error) {
+	return nil, nil
 }

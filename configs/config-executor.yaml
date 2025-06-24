@@ -36,21 +36,30 @@ logger:
   encoding: "json" # json, console
 
 openrouter:
-  api_key: "XXXXXXXX"
+  api_key: "XXXXXX"
   model: "deepseek/deepseek-chat-v3-0324:free"
 
 gemini:
-  api_key: "XXXXXX"
+  api_key: "XXXXX"
   model: "gemini-2.0-flash"
   max_request_per_minute: 15
   max_token_per_minute: 1_000_000
+  base_url: "https://generativelanguage.googleapis.com/v1beta/models"
+
+openai:
+  api_key: "XXXXX"
+  model: "gpt-4.1-nano"
+  max_request_per_minute: 20
+  max_token_per_minute: 1_000_000
+  base_url: "https://api.openai.com/v1/chat/completions"
+
 
 ai:
-  provider: "gemini" # openrouter or gemini
+  provider: "openai" # openrouter or gemini or openai
 
 telegram:
-  bot_token: "XXXXXS"
-  chat_id: 1596374167
+  bot_token: "XXXXXXXX"
+  chat_id: 123123
 
 yahoo_finance:
   base_url: "https://query1.finance.yahoo.com/v8/finance/chart"

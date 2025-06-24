@@ -23,7 +23,7 @@ type StockNewsSummaryStrategy struct {
 	stockRepo            repository.StocksRepository
 	stockNewsRepo        repository.StockNewsRepository
 	stockNewsSummaryRepo repository.StockNewsSummaryRepository
-	geminiRepo           repository.GeminiAIRepository
+	aiRepo               repository.AIRepository
 	telegramNotifier     telegram.Notifier
 }
 
@@ -34,7 +34,7 @@ func NewStockNewsSummaryStrategy(
 	stockRepo repository.StocksRepository,
 	stockNewsRepo repository.StockNewsRepository,
 	stockNewsSummaryRepo repository.StockNewsSummaryRepository,
-	geminiRepo repository.GeminiAIRepository,
+	aiRepo repository.AIRepository,
 	telegramNotifier telegram.Notifier,
 ) *StockNewsSummaryStrategy {
 	return &StockNewsSummaryStrategy{
@@ -43,7 +43,7 @@ func NewStockNewsSummaryStrategy(
 		stockRepo:            stockRepo,
 		stockNewsRepo:        stockNewsRepo,
 		stockNewsSummaryRepo: stockNewsSummaryRepo,
-		geminiRepo:           geminiRepo,
+		aiRepo:               aiRepo,
 		telegramNotifier:     telegramNotifier,
 	}
 }
@@ -115,7 +115,7 @@ func (s *StockNewsSummaryStrategy) Execute(ctx context.Context, job *entity.Job)
 			}
 
 			// 2. Call Gemini API to get the summary
-			summaryResult, err := s.geminiRepo.GenerateNewsSummary(ctx, code, rankedNews)
+			summaryResult, err := s.aiRepo.GenerateNewsSummary(ctx, code, rankedNews)
 			if err != nil {
 				s.logger.Error("Failed to generate news summary from Gemini", logger.ErrorField(err))
 				mu.Lock()

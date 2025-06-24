@@ -34,7 +34,7 @@ type StockNewsScraperStrategy struct {
 	db               *gorm.DB
 	logger           *logger.Logger
 	decoder          *decoder.GoogleDecoder
-	analyzerRepo     repository.NewsAnalyzerRepository
+	aiRepo           repository.AIRepository
 	stockMentionRepo repository.StockMentionRepository
 	stockNewsRepo    repository.StockNewsRepository
 	client           *http.Client
@@ -43,12 +43,12 @@ type StockNewsScraperStrategy struct {
 }
 
 // NewStockNewsScraperStrategy creates a new instance of StockNewsScraperStrategy.
-func NewStockNewsScraperStrategy(db *gorm.DB, logger *logger.Logger, decoder *decoder.GoogleDecoder, analyzerRepo repository.NewsAnalyzerRepository, stockMentionRepo repository.StockMentionRepository, stockNewsRepo repository.StockNewsRepository, stockRepo repository.StocksRepository) *StockNewsScraperStrategy {
+func NewStockNewsScraperStrategy(db *gorm.DB, logger *logger.Logger, decoder *decoder.GoogleDecoder, aiRepo repository.AIRepository, stockMentionRepo repository.StockMentionRepository, stockNewsRepo repository.StockNewsRepository, stockRepo repository.StocksRepository) *StockNewsScraperStrategy {
 	return &StockNewsScraperStrategy{
 		db:               db,
 		logger:           logger,
 		decoder:          decoder,
-		analyzerRepo:     analyzerRepo,
+		aiRepo:           aiRepo,
 		stockMentionRepo: stockMentionRepo,
 		stockNewsRepo:    stockNewsRepo,
 		client:           &http.Client{},
@@ -339,7 +339,7 @@ func (s *StockNewsScraperStrategy) processNewsItem(ctx context.Context, item *go
 
 	var analysisResult *dto.NewsAnalysisResult
 
-	analysisResult, err = s.analyzerRepo.Analyze(ctx, news.Title, publishedDateStr, news.RawContent)
+	analysisResult, err = s.aiRepo.NewsAnalyze(ctx, news.Title, publishedDateStr, news.RawContent)
 	if err != nil {
 		s.logger.Error("Failed to analyze news content", logger.ErrorField(err), logger.StringField("title", item.Title))
 		return FAILED, entity.StockNews{}, fmt.Errorf("failed to analyze news content: %w", err)
