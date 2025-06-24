@@ -241,7 +241,7 @@ func (s *stockAnalyzerService) ProcessRetries(ctx context.Context) {
 				logger.IntField("retry_count", int(pendingInfo[0].RetryCount+1)),
 				logger.IntField("max_retry", s.cfg.Executor.RedisStreamStockAnalyzerMaxRetry),
 			)
-			errType := fmt.Sprintf("Retry count exceeded -> %s", common.RedisStreamStockAnalyzer)
+			errType := fmt.Sprintf("Retry count exceeded for event %s", common.RedisStreamStockAnalyzer)
 			data := fmt.Sprintf("%s | %s | %s", streamData.StockCode, streamData.Interval, streamData.Range)
 			msgTelegram := telegram.FormatErrorAlertMessage(utils.TimeNowWIB(), errType, err.Error(), data)
 			if err := s.telegramBot.SendMessage(msgTelegram); err != nil {

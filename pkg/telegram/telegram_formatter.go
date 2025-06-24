@@ -176,11 +176,11 @@ func FormatStockAlertResultForTelegram(alertType AlertType, stockCode string, tr
 
 func FormatErrorAlertMessage(time time.Time, errType string, errMsg string, data string) string {
 	return fmt.Sprintf(`📛 [ERROR ALERT] 
-🕒 %s
+%s
 🔧 %s
 ⚠️ %s	
 
-📄 %s
+📄 Data: %s
 `, utils.PrettyDate(time), errType, errMsg, data)
 }
 
