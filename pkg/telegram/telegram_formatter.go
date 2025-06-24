@@ -190,6 +190,16 @@ func FormatAnalysisMessage(analysis *dto.IndividualAnalysisResponse) string {
 	sb.WriteString(fmt.Sprintf("📊 **Analysis for %s**\n", analysis.Symbol))
 	sb.WriteString(fmt.Sprintf("🎯 Signal: **%s**\n\n", analysis.Recommendation.Action))
 
+	// Recommendation
+	sb.WriteString("💡 **Recommendation:**\n")
+	sb.WriteString(fmt.Sprintf("• 💵 Buy Price: $%.2f\n", analysis.Recommendation.BuyPrice))
+	sb.WriteString(fmt.Sprintf("• 🎯 Target Price: $%.2f\n", analysis.Recommendation.TargetPrice))
+	sb.WriteString(fmt.Sprintf("• 🛡 Stop Loss: $%.2f\n", analysis.Recommendation.CutLoss))
+	sb.WriteString(fmt.Sprintf("• 🔁 Risk/Reward Ratio: %.2f\n", analysis.Recommendation.RiskRewardRatio))
+	sb.WriteString(fmt.Sprintf("• 📊 Confidence: %d%%\n\n", analysis.Recommendation.ConfidenceLevel))
+	// Reasoning
+	sb.WriteString(fmt.Sprintf("🧠 **Reasoning:**\n %s\n\n", analysis.Recommendation.Reasoning))
+
 	// Technical Analysis Summary
 	sb.WriteString("🔧 **Technical Analysis:**\n")
 	sb.WriteString(fmt.Sprintf("• Trend: %s \n", analysis.TechnicalAnalysis.Trend))
@@ -202,7 +212,7 @@ func FormatAnalysisMessage(analysis *dto.IndividualAnalysisResponse) string {
 	sb.WriteString(fmt.Sprintf("• Resistance Level: $%.2f\n", analysis.TechnicalAnalysis.ResistanceLevel))
 	sb.WriteString(fmt.Sprintf("• Technical Score: %d/100\n", analysis.TechnicalAnalysis.TechnicalScore))
 	if len(analysis.TechnicalAnalysis.KeyInsights) > 0 {
-		sb.WriteString("\n📌 **Key Insights:**\n")
+		sb.WriteString("\n📌 **Technical Insights:**\n")
 		for _, insight := range analysis.TechnicalAnalysis.KeyInsights {
 			sb.WriteString(fmt.Sprintf("• %s\n", utils.CapitalizeSentence(insight)))
 		}
@@ -210,28 +220,16 @@ func FormatAnalysisMessage(analysis *dto.IndividualAnalysisResponse) string {
 	}
 
 	// News Summary
-	sb.WriteString("📰 **News Summary Analysis:**\n")
-	sb.WriteString(fmt.Sprintf("Confidence Score: %.2f\n", analysis.NewsSummary.ConfidenceScore))
-	sb.WriteString(fmt.Sprintf("Sentiment: %s\n", analysis.NewsSummary.Sentiment))
-	sb.WriteString(fmt.Sprintf("Impact: %s\n\n", analysis.NewsSummary.Impact))
-
-	sb.WriteString("🗞 **Key Issues:**\n")
-	if len(analysis.NewsSummary.KeyIssues) > 0 {
-		for _, issue := range analysis.NewsSummary.KeyIssues {
-			sb.WriteString(fmt.Sprintf("• %s\n", utils.CapitalizeSentence(issue)))
-		}
+	sb.WriteString("📰 **News Analysis:**\n")
+	if analysis.NewsSummary.ConfidenceScore > 0 {
+		sb.WriteString(fmt.Sprintf("Confidence Score: %.2f\n", analysis.NewsSummary.ConfidenceScore))
+		sb.WriteString(fmt.Sprintf("Sentiment: %s\n", analysis.NewsSummary.Sentiment))
+		sb.WriteString(fmt.Sprintf("Impact: %s\n\n", analysis.NewsSummary.Impact))
+		sb.WriteString("🧐 *Reasoning:*\n")
+		sb.WriteString(fmt.Sprintf("%s\n\n", analysis.NewsSummary.Reasoning))
+	} else {
+		sb.WriteString("_Belum ada data berita terbaru yang tersedia untuk saham ini._\n\n")
 	}
-	sb.WriteString("\n")
-
-	// Recommendation
-	sb.WriteString("💡 **Recommendation:**\n")
-	sb.WriteString(fmt.Sprintf("• 💵 Buy Price: $%.2f\n", analysis.Recommendation.BuyPrice))
-	sb.WriteString(fmt.Sprintf("• 🎯 Target Price: $%.2f\n", analysis.Recommendation.TargetPrice))
-	sb.WriteString(fmt.Sprintf("• 🛡 Stop Loss: $%.2f\n", analysis.Recommendation.CutLoss))
-	sb.WriteString(fmt.Sprintf("• 🔁 Risk/Reward Ratio: %.2f\n", analysis.Recommendation.RiskRewardRatio))
-	sb.WriteString(fmt.Sprintf("• 📊 Confidence: %d%%\n\n", analysis.Recommendation.ConfidenceLevel))
-	// Reasoning
-	sb.WriteString(fmt.Sprintf("🧠 **Reasoning:**\n %s\n\n", analysis.Recommendation.Reasoning))
 
 	sb.WriteString("\n")
 	sb.WriteString(fmt.Sprintf("📅 _Terakhir dianalisis: %s_\n", analysis.AnalysisDate.Format("2006-01-02 15:04:05")))
@@ -246,7 +244,7 @@ func FormatPositionMonitoringMessage(position *dto.PositionMonitoringResponse) s
 	unrealizedPnLPercentageStr := fmt.Sprintf("(+%.2f)", unrealizedPnLPercentage)
 
 	if unrealizedPnLPercentage < 0 {
-		unrealizedPnLPercentageStr = fmt.Sprintf("(-%.2f)", unrealizedPnLPercentage)
+		unrealizedPnLPercentageStr = fmt.Sprintf("(%.2f)", unrealizedPnLPercentage)
 	}
 
 	daysRemaining := utils.RemainingDays(position.MaxHoldingPeriodDays, position.BuyDate)
@@ -255,39 +253,6 @@ func FormatPositionMonitoringMessage(position *dto.PositionMonitoringResponse) s
 	sb.WriteString(fmt.Sprintf("📊 **Position Update: %s**\n", position.Symbol))
 	sb.WriteString(fmt.Sprintf("💰 Buy: $%.2f | Current: $%.2f %s\n", position.BuyPrice, position.MarketPrice, unrealizedPnLPercentageStr))
 	sb.WriteString(fmt.Sprintf("📈 Age: %d days | Remaining: %d days\n\n", ageDays, daysRemaining))
-
-	// Technical Analysis
-	sb.WriteString("🔧 **Technical Analysis:**\n")
-	sb.WriteString(fmt.Sprintf("• Trend: %s \n", position.TechnicalAnalysis.Trend))
-	sb.WriteString(fmt.Sprintf("• EMA Signal: %s\n", position.TechnicalAnalysis.EMASignal))
-	sb.WriteString(fmt.Sprintf("• RSI: %s\n", position.TechnicalAnalysis.RSISignal))
-	sb.WriteString(fmt.Sprintf("• MACD: %s\n", position.TechnicalAnalysis.MACDSignal))
-	sb.WriteString(fmt.Sprintf("• Momentum: %s\n", position.TechnicalAnalysis.Momentum))
-	sb.WriteString(fmt.Sprintf("• Bollinger Bands Position: %s\n", position.TechnicalAnalysis.BollingerBandsPosition))
-	sb.WriteString(fmt.Sprintf("• Support Level: $%.2f\n", position.TechnicalAnalysis.SupportLevel))
-	sb.WriteString(fmt.Sprintf("• Resistance Level: $%.2f\n", position.TechnicalAnalysis.ResistanceLevel))
-	sb.WriteString(fmt.Sprintf("• Technical Score: %d/100\n", position.TechnicalAnalysis.TechnicalScore))
-	if len(position.TechnicalAnalysis.KeyInsights) > 0 {
-		sb.WriteString("\n📌 **Key Insights:**\n")
-		for _, insight := range position.TechnicalAnalysis.KeyInsights {
-			sb.WriteString(fmt.Sprintf("• %s\n", utils.CapitalizeSentence(insight)))
-		}
-		sb.WriteString("\n")
-	}
-
-	// News Summary
-	sb.WriteString("📰 **News Summary:**\n")
-	sb.WriteString(fmt.Sprintf("Confidence Score: %.2f\n", position.NewsSummary.ConfidenceScore))
-	sb.WriteString(fmt.Sprintf("Sentiment: %s\n", position.NewsSummary.Sentiment))
-	sb.WriteString(fmt.Sprintf("Impact: %s\n\n", position.NewsSummary.Impact))
-
-	sb.WriteString("🗞 **Key Issues:**\n")
-	if len(position.NewsSummary.KeyIssues) > 0 {
-		for _, issue := range position.NewsSummary.KeyIssues {
-			sb.WriteString(fmt.Sprintf("• %s\n", utils.CapitalizeSentence(issue)))
-		}
-	}
-	sb.WriteString("\n")
 
 	// Recommendation
 	sb.WriteString("💡 **Recommendation:**\n")
@@ -302,6 +267,36 @@ func FormatPositionMonitoringMessage(position *dto.PositionMonitoringResponse) s
 		for _, condition := range position.Recommendation.ExitConditions {
 			sb.WriteString(fmt.Sprintf("• %s\n", condition))
 		}
+	}
+
+	// Technical Analysis
+	sb.WriteString("\n🔧 **Technical Analysis:**\n")
+	sb.WriteString(fmt.Sprintf("• Trend: %s \n", position.TechnicalAnalysis.Trend))
+	sb.WriteString(fmt.Sprintf("• EMA Signal: %s\n", position.TechnicalAnalysis.EMASignal))
+	sb.WriteString(fmt.Sprintf("• RSI: %s\n", position.TechnicalAnalysis.RSISignal))
+	sb.WriteString(fmt.Sprintf("• MACD: %s\n", position.TechnicalAnalysis.MACDSignal))
+	sb.WriteString(fmt.Sprintf("• Momentum: %s\n", position.TechnicalAnalysis.Momentum))
+	sb.WriteString(fmt.Sprintf("• Bollinger Bands Position: %s\n", position.TechnicalAnalysis.BollingerBandsPosition))
+	sb.WriteString(fmt.Sprintf("• Support Level: $%.2f\n", position.TechnicalAnalysis.SupportLevel))
+	sb.WriteString(fmt.Sprintf("• Resistance Level: $%.2f\n", position.TechnicalAnalysis.ResistanceLevel))
+	sb.WriteString(fmt.Sprintf("• Technical Score: %d/100\n", position.TechnicalAnalysis.TechnicalScore))
+	if len(position.TechnicalAnalysis.KeyInsights) > 0 {
+		sb.WriteString("\n📌 **Technical Insights:**\n")
+		for _, insight := range position.TechnicalAnalysis.KeyInsights {
+			sb.WriteString(fmt.Sprintf("• %s\n", utils.CapitalizeSentence(insight)))
+		}
+		sb.WriteString("\n")
+	}
+
+	// News Summary
+	sb.WriteString("📰 **News Analysis:**\n")
+	if position.NewsSummary.ConfidenceScore > 0 {
+		sb.WriteString(fmt.Sprintf("Confidence Score: %.2f\n", position.NewsSummary.ConfidenceScore))
+		sb.WriteString(fmt.Sprintf("Sentiment: %s\n", position.NewsSummary.Sentiment))
+		sb.WriteString(fmt.Sprintf("Impact: %s\n\n", position.NewsSummary.Impact))
+		sb.WriteString(fmt.Sprintf("Analysis: %s\n\n", position.NewsSummary.Reasoning))
+	} else {
+		sb.WriteString("_Belum ada data berita terbaru yang tersedia untuk saham ini._\n\n")
 	}
 
 	sb.WriteString("\n")

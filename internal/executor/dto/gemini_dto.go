@@ -74,10 +74,10 @@ type Recommendation struct {
 
 // News Summary
 type NewsSummary struct {
-	ConfidenceScore float64  `json:"confidence_score"`
-	Sentiment       string   `json:"sentiment"`
-	Impact          string   `json:"impact"`
-	KeyIssues       []string `json:"key_issues"`
+	ConfidenceScore float64 `json:"confidence_score"`
+	Sentiment       string  `json:"sentiment"`
+	Impact          string  `json:"impact"`
+	Reasoning       string  `json:"reasoning"`
 }
 
 type PositionMonitoringRequest struct {

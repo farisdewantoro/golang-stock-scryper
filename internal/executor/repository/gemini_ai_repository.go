@@ -59,7 +59,12 @@ func (r *geminiAIRepository) NewsAnalyze(ctx context.Context, title, publishedDa
 		return nil, err
 	}
 
-	return r.parseGeminiResponse(geminiResp)
+	result, err := r.parseGeminiResponse(geminiResp)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }
 
 // GenerateNewsSummary creates a summary of news for a stock.
@@ -179,6 +184,14 @@ func (r *geminiAIRepository) AnalyzeStock(ctx context.Context, symbol string, st
 		return nil, err
 	}
 	result.AnalysisDate = utils.TimeNowWIB()
+	if summary != nil {
+		result.NewsSummary = dto.NewsSummary{
+			ConfidenceScore: summary.SummaryConfidenceScore,
+			Sentiment:       summary.SummarySentiment,
+			Impact:          summary.SummaryImpact,
+			Reasoning:       summary.Reasoning,
+		}
+	}
 	return result, nil
 }
 
@@ -191,13 +204,23 @@ func (r *geminiAIRepository) PositionMonitoring(ctx context.Context, request *dt
 	}
 
 	result, err := r.parsePositionMonitoringResponse(geminiResp)
+	if err != nil {
+		return nil, err
+	}
+
 	result.MarketPrice = stockData.MarketPrice
 	result.BuyPrice = request.BuyPrice
 	result.BuyDate = request.BuyTime
 	result.MaxHoldingPeriodDays = request.MaxHoldingPeriodDays
 	result.AnalysisDate = utils.TimeNowWIB()
-	if err != nil {
-		return nil, err
+
+	if summary != nil {
+		result.NewsSummary = dto.NewsSummary{
+			ConfidenceScore: summary.SummaryConfidenceScore,
+			Sentiment:       summary.SummarySentiment,
+			Impact:          summary.SummaryImpact,
+			Reasoning:       summary.Reasoning,
+		}
 	}
 	return result, nil
 }

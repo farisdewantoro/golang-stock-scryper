@@ -94,12 +94,6 @@ Anda adalah analis teknikal berpengalaman di pasar saham Indonesia. Tugas Anda a
     "risk_reward_ratio": 3.0,
     "confidence_level": 80,
     "reasoning": "Trend bullish dengan volume tinggi dan indikator teknikal mendukung. Berita memberikan sentimen positif tambahan."
-  },
-  "news_summary": {
-    "sentiment": "positive",
-    "impact": "bullish",
-    "confidence_score": 0.8,
-    "key_issues": ["EV", "industri", "investasi asing"]
   }
 }
 `, symbol, newsSummaryText, stockData.Range, string(ohlcvJSON), stockData.MarketPrice, symbol)
@@ -236,12 +230,6 @@ Pastikan field "exit_reasoning" dan "exit_conditions" selalu ditulis dalam bahas
 	],
 	"risk_reward_ratio": 3.0,
 	"confidence_level": 80
-  },
-  "news_summary":{ (JIKA ADA NEWS SUMMARY)
-    "confidence_score": 0.0 - 1.0,
-    "sentiment": "positive, negative, neutral, mixed",
-    "impact": "bullish, bearish, sideways"
-    "key_issues": ["issue1", "issue2", "issue3"]
   }
 }
   
