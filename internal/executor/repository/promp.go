@@ -73,12 +73,12 @@ Anda adalah analis teknikal berpengalaman di pasar saham Indonesia. Tugas Anda a
   "symbol": "%s",
   "analysis_date": "%s",
   "technical_analysis": {
-    "trend": "BULLISH",
-    "momentum": "STRONG",
-    "ema_signal": "BULLISH",
-    "rsi_signal": "NEUTRAL",
-    "macd_signal": "BULLISH",
-    "bollinger_bands_position": "UPPER",
+    "trend": "BULLISH|BEARISH|SIDEWAYS",
+    "momentum": "WEAK_UP|STRONG_UP|FLAT|WEAK_DOWN|STRONG_DOWN",
+    "ema_signal": "BULLISH|BEARISH|NO_CROSS",
+    "rsi_signal": "NEUTRAL|OVERBOUGHT|OVERSOLD",
+    "macd_signal": "BULLISH|BEARISH|NEUTRAL",
+    "bollinger_bands_position": "UPPER_BAND|LOWER_BAND|MIDDLE_BAND",
     "support_level": 1420,
     "resistance_level": 1615,
 	"key_insights": [
@@ -211,12 +211,12 @@ Pastikan field "exit_reasoning" dan "exit_conditions" selalu ditulis dalam bahas
 {
   "symbol": "%s",
   "technical_analysis": {
-    "trend": "BULLISH",
-    "momentum": "STRONG",
-    "ema_signal": "BULLISH",
-    "rsi_signal": "NEUTRAL",
-    "macd_signal": "BULLISH",
-    "bollinger_bands_position": "UPPER",
+    "trend": "BULLISH|BEARISH|SIDEWAYS",
+    "momentum": "WEAK_UP|STRONG_UP|FLAT|WEAK_DOWN|STRONG_DOWN",
+    "ema_signal": "BULLISH|BEARISH|NO_CROSS",
+    "rsi_signal": "NEUTRAL|OVERBOUGHT|OVERSOLD",
+    "macd_signal": "BULLISH|BEARISH|NEUTRAL",
+    "bollinger_bands_position": "UPPER_BAND|LOWER_BAND|MIDDLE_BAND",
     "support_level": 1420,
     "resistance_level": 1615,
 	"key_insights": [

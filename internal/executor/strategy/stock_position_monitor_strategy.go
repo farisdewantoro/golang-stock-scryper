@@ -23,9 +23,8 @@ type StockPositionMonitorStrategy struct {
 }
 
 type StockPositionMonitorPayload struct {
-	Interval  string `json:"interval"`
-	Range     string `json:"range"`
-	SendNotif bool   `json:"send_notif"`
+	Interval string `json:"interval"`
+	Range    string `json:"range"`
 }
 
 type StockPositionMonitorResult struct {
@@ -72,12 +71,11 @@ func (s *StockPositionMonitorStrategy) Execute(ctx context.Context, job *entity.
 		}
 
 		streamData := &dto.StreamDataStockPositionMonitor{
-			ID:        stockPosition.ID,
-			UserID:    stockPosition.UserID,
-			StockCode: stockPosition.StockCode,
-			Interval:  payload.Interval,
-			Range:     payload.Range,
-			SendNotif: payload.SendNotif,
+			StockPositionID: stockPosition.ID,
+			UserID:          stockPosition.UserID,
+			StockCode:       stockPosition.StockCode,
+			Interval:        payload.Interval,
+			Range:           payload.Range,
 		}
 		streamDataJSON, err := json.Marshal(streamData)
 		if err != nil {

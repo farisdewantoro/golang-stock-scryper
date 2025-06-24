@@ -184,7 +184,15 @@ func (r *geminiAIRepository) PositionMonitoring(ctx context.Context, request *dt
 		return nil, err
 	}
 
-	return r.parsePositionMonitoringResponse(geminiResp)
+	result, err := r.parsePositionMonitoringResponse(geminiResp)
+	result.MarketPrice = stockData.MarketPrice
+	result.BuyPrice = request.BuyPrice
+	result.BuyDate = request.BuyTime
+	result.MaxHoldingPeriodDays = request.MaxHoldingPeriodDays
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
 }
 
 func (r *geminiAIRepository) parseIndividualAnalysisResponse(resp *dto.GeminiAPIResponse) (*dto.IndividualAnalysisResponse, error) {

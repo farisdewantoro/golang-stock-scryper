@@ -57,3 +57,14 @@ func GetIndonesianMonth(month time.Month) string {
 	}
 	return months[month]
 }
+
+func RemainingDays(maxHoldingDays int, buyTime time.Time) int {
+	// Hitung waktu expired
+	expiredTime := buyTime.AddDate(0, 0, maxHoldingDays)
+
+	// Hitung selisih hari dari sekarang
+	now := time.Now()
+	remaining := int(expiredTime.Sub(now).Hours() / 24)
+
+	return remaining
+}

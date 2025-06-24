@@ -21,10 +21,10 @@ type StreamDataStockAnalyzer struct {
 }
 
 type StreamDataStockPositionMonitor struct {
-	ID        uint   `json:"id"`
-	UserID    uint   `json:"user_id"`
-	StockCode string `json:"stock_code"`
-	Interval  string `json:"interval"`
-	Range     string `json:"range"`
-	SendNotif bool   `json:"send_notif"`
+	StockPositionID uint   `json:"stock_position_id"`
+	UserID          uint   `json:"user_id"`
+	StockCode       string `json:"stock_code"`
+	Interval        string `json:"interval"`
+	Range           string `json:"range"`
+	SendToTelegram  bool   `json:"send_to_telegram"`
 }

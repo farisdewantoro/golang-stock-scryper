@@ -90,10 +90,14 @@ type PositionMonitoringRequest struct {
 }
 
 type PositionMonitoringResponse struct {
-	Symbol            string                 `json:"symbol"`
-	TechnicalAnalysis TechnicalAnalysis      `json:"technical_analysis"`
-	NewsSummary       NewsSummary            `json:"news_summary,omitempty"`
-	Recommendation    RecommendationPosition `json:"recommendation,omitempty"`
+	Symbol               string                 `json:"symbol"`
+	MarketPrice          float64                `json:"market_price"`
+	BuyDate              time.Time              `json:"buy_date"`
+	BuyPrice             float64                `json:"buy_price"`
+	MaxHoldingPeriodDays int                    `json:"max_holding_period_days"`
+	TechnicalAnalysis    TechnicalAnalysis      `json:"technical_analysis"`
+	NewsSummary          NewsSummary            `json:"news_summary,omitempty"`
+	Recommendation       RecommendationPosition `json:"recommendation,omitempty"`
 }
 
 type RecommendationPosition struct {

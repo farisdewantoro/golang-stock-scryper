@@ -12,7 +12,6 @@ import (
 	"golang-stock-scryper/pkg/logger"
 	"golang-stock-scryper/pkg/telegram"
 	"golang-stock-scryper/pkg/utils"
-	"strings"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -133,7 +132,7 @@ func (s *stockPositionMonitoringService) Execute(ctx context.Context, req dto.St
 	}
 
 	stockPositions, err := s.stockPositionRepo.Get(ctx, dto.GetStockPositionsParam{
-		IDs: []uint{req.ID},
+		IDs: []uint{req.StockPositionID},
 	})
 	if err != nil {
 		s.log.Error("Failed to get stock position", logger.ErrorField(err))
@@ -141,7 +140,7 @@ func (s *stockPositionMonitoringService) Execute(ctx context.Context, req dto.St
 	}
 
 	if len(stockPositions) == 0 {
-		s.log.Error("Stock position not found", logger.Field("id", req.ID))
+		s.log.Error("Stock position not found", logger.Field("id", req.StockPositionID))
 		return fmt.Errorf("stock position not found")
 	}
 
@@ -203,13 +202,20 @@ func (s *stockPositionMonitoringService) Execute(ctx context.Context, req dto.St
 		return err
 	}
 
-	shouldSendNotif := stockPosition.MonitorPosition &&
-		strings.ToLower(aiResp.Recommendation.Action) != "hold" &&
-		req.SendNotif
+	shouldSendTelegram := (stockPosition.MonitorPosition &&
+		aiResp.Recommendation.Action != "HOLD" && aiResp.Recommendation.ConfidenceLevel >= 60)
 
-	if shouldSendNotif {
-		if err := s.telegramBot.SendMessageUser("test send", int64(stockPosition.User.TelegramID)); err != nil {
+	if req.SendToTelegram || shouldSendTelegram {
+		msg := telegram.FormatPositionMonitoringMessage(aiResp)
+		if err := s.telegramBot.SendMessageUser(msg, int64(stockPosition.User.TelegramID)); err != nil {
 			s.log.Error("Failed to send notification", logger.ErrorField(err))
+			return nil
+		}
+
+		stockPosition.LastPriceAlertAt = utils.ToPointer(utils.TimeNowWIB())
+		errSql := s.stockPositionRepo.Update(ctx, stockPosition)
+		if errSql != nil {
+			s.log.Error("Failed to update stock position", logger.ErrorField(errSql), logger.StringField("stock_code", stockPosition.StockCode))
 		}
 	}
 
@@ -273,12 +279,12 @@ func (s *stockPositionMonitoringService) ProcessRetries(ctx context.Context) {
 	}
 
 	if err := s.Execute(ctx, dto.StreamDataStockPositionMonitor{
-		ID:        streamData.ID,
-		StockCode: streamData.StockCode,
-		Interval:  streamData.Interval,
-		Range:     streamData.Range,
-		SendNotif: streamData.SendNotif,
-		UserID:    streamData.UserID,
+		StockPositionID: streamData.StockPositionID,
+		StockCode:       streamData.StockCode,
+		Interval:        streamData.Interval,
+		Range:           streamData.Range,
+		SendToTelegram:  streamData.SendToTelegram,
+		UserID:          streamData.UserID,
 	}); err != nil {
 		s.log.Error("Failed to analyze stock", logger.ErrorField(err), logger.Field("message_id", msg.ID), logger.StringField("stock_code", streamData.StockCode), logger.StringField("interval", streamData.Interval), logger.StringField("range", streamData.Range))
 
