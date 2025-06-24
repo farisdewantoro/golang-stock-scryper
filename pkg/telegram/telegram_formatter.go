@@ -249,12 +249,22 @@ func FormatPositionMonitoringMessage(position *dto.PositionMonitoringResponse) s
 	daysRemaining := utils.RemainingDays(position.MaxHoldingPeriodDays, position.BuyDate)
 	ageDays := int(time.Since(position.BuyDate).Hours() / 24)
 
+	iconAction := "❔"
+	if position.Recommendation.Action == "HOLD" {
+		iconAction = "🟡"
+	} else if position.Recommendation.Action == "SELL" {
+		iconAction = "🔴"
+	} else if position.Recommendation.Action == "BUY" {
+		iconAction = "🟢"
+	}
+
 	sb.WriteString(fmt.Sprintf("📊 **Position Update: %s**\n", position.Symbol))
 	sb.WriteString(fmt.Sprintf("💰 Buy: $%d | Current: $%d %s\n", int(position.BuyPrice), int(position.MarketPrice), unrealizedPnLPercentageStr))
 	sb.WriteString(fmt.Sprintf("📈 Age: %d days | Remaining: %d days\n\n", ageDays, daysRemaining))
 
 	// Recommendation
 	sb.WriteString("💡 **Recommendation:**\n")
+	sb.WriteString(fmt.Sprintf("• %s Action: %s\n", iconAction, position.Recommendation.Action))
 	sb.WriteString(fmt.Sprintf("• 🎯 Target Price: $%d\n", int(position.Recommendation.TargetPrice)))
 	sb.WriteString(fmt.Sprintf("• 🛡 Stop Loss: $%d\n", int(position.Recommendation.CutLoss)))
 	sb.WriteString(fmt.Sprintf("• 🔁 Risk/Reward Ratio: %.2f\n", position.Recommendation.RiskRewardRatio))
