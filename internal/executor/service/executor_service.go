@@ -114,7 +114,7 @@ func (s *executorService) ProcessTask(ctx context.Context) {
 	utils.GoSafe(func() {
 		s.semaphore <- struct{}{}
 		defer func() { <-s.semaphore }()
-		executionCtx, cancelExec := context.WithTimeout(ctx, time.Duration(job.Timeout)*time.Second)
+		executionCtx, cancelExec := context.WithTimeout(context.Background(), time.Duration(job.Timeout)*time.Second)
 		defer cancelExec()
 
 		s.executeAndUpdate(executionCtx, job, &taskHistory)
