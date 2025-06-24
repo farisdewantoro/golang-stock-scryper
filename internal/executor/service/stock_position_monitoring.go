@@ -77,6 +77,7 @@ func (s *stockPositionMonitoringService) ProcessTask(ctx context.Context) {
 	}
 
 	if len(streams) == 0 || len(streams[0].Messages) == 0 {
+		s.log.Debug("No messages found", logger.StringField("stream", common.RedisStreamStockPositionMonitor))
 		return
 	}
 
