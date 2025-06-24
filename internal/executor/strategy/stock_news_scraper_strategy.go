@@ -100,7 +100,7 @@ func (s *StockNewsScraperStrategy) Execute(ctx context.Context, job *entity.Job)
 		return "", fmt.Errorf("failed to get stocks: %w", err)
 	}
 
-	for len(payload.AdditionalKeywords) > 0 {
+	if len(payload.AdditionalKeywords) > 0 {
 		for _, keyword := range payload.AdditionalKeywords {
 			if keyword == "" {
 				continue
