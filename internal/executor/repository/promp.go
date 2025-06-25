@@ -77,7 +77,10 @@ Gunakan kombinasi analisis teknikal dan berita. Wajib patuhi semua aturan beriku
 
 - Semua angka dan penilaian harus **konsisten secara logis dan matematis**. Jangan berikan sinyal BUY jika tidak memenuhi semua syarat di atas.
 
-### FORMAT OUTPUT (JSON)
+### FORMAT OUTPUT WAJIB:
+Hanya berikan **output dalam format JSON valid**, tanpa penjelasan tambahan.
+
+Contoh JSON yang di harapkan:
 {
   "symbol": "%s",
   "technical_analysis": {
@@ -209,7 +212,10 @@ Data posisi trading:
 Gunakan berita hanya jika relevan dan selaras atau berlawanan kuat dengan sinyal teknikal.
 
 ### FORMAT OUTPUT YANG DIHARAPKAN (JSON)
-Pastikan field "exit_reasoning" dan "exit_conditions" selalu ditulis dalam bahasa Indonesia yang jelas dan mudah dipahami. Jelaskan alasan exit secara logis berdasarkan analisis teknikal dan konteks berita, serta jabarkan kondisi exit dalam bentuk poin-poin terstruktur berbahasa Indonesia.
+- Hanya berikan **output dalam format JSON valid**, tanpa penjelasan tambahan.
+- Pastikan field "exit_reasoning" dan "exit_conditions" selalu ditulis dalam bahasa Indonesia yang jelas dan mudah dipahami. Jelaskan alasan exit secara logis berdasarkan analisis teknikal dan konteks berita, serta jabarkan kondisi exit dalam bentuk poin-poin terstruktur berbahasa Indonesia.
+
+Contoh JSON yang di harapkan:
 {
   "symbol": "%s",
   "technical_analysis": {

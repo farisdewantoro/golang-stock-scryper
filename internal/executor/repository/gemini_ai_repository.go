@@ -111,29 +111,34 @@ func (r *geminiAIRepository) executeGeminiAIRequest(ctx context.Context, prompt 
 
 	jsonPayload, err := json.Marshal(payload)
 	if err != nil {
+		r.logger.Error("Failed to marshal payload", logger.ErrorField(err), logger.StringField("prompt", prompt))
 		return nil, fmt.Errorf("failed to marshal payload: %w", err)
 	}
 
 	apiURL := fmt.Sprintf("%s/%s:generateContent?key=%s", r.cfg.Gemini.BaseURL, r.cfg.Gemini.Model, r.cfg.Gemini.APIKey)
 	req, err := http.NewRequestWithContext(ctx, "POST", apiURL, bytes.NewBuffer(jsonPayload))
 	if err != nil {
+		r.logger.Error("Failed to create new http request", logger.ErrorField(err), logger.StringField("prompt", prompt))
 		return nil, fmt.Errorf("failed to create new http request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := r.client.Do(req)
 	if err != nil {
+		r.logger.Error("Failed to send request to Gemini API", logger.ErrorField(err), logger.StringField("prompt", prompt))
 		return nil, fmt.Errorf("failed to send request to Gemini API: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
+		r.logger.Error("Received non-OK response from Gemini API", logger.IntField("status_code", resp.StatusCode), logger.StringField("prompt", prompt))
 		body, _ := io.ReadAll(resp.Body)
 		return nil, fmt.Errorf("received non-OK response from Gemini API: %d - %s", resp.StatusCode, string(body))
 	}
 
 	var geminiResp dto.GeminiAPIResponse
 	if err := json.NewDecoder(resp.Body).Decode(&geminiResp); err != nil {
+		r.logger.Error("Failed to decode response body", logger.ErrorField(err), logger.StringField("prompt", prompt))
 		return nil, fmt.Errorf("failed to decode response body: %w", err)
 	}
 
@@ -238,6 +243,7 @@ func (r *geminiAIRepository) parseIndividualAnalysisResponse(resp *dto.GeminiAPI
 
 	var result dto.IndividualAnalysisResponse
 	if err := json.Unmarshal([]byte(rawJSON), &result); err != nil {
+		r.logger.Error("Failed to unmarshal individual analysis response from Gemini response", logger.ErrorField(err), logger.StringField("response", rawJSON))
 		return nil, fmt.Errorf("failed to unmarshal individual analysis response from Gemini response: %w", err)
 	}
 
@@ -254,6 +260,7 @@ func (r *geminiAIRepository) parsePositionMonitoringResponse(resp *dto.GeminiAPI
 
 	var result dto.PositionMonitoringResponse
 	if err := json.Unmarshal([]byte(rawJSON), &result); err != nil {
+		r.logger.Error("Failed to unmarshal position monitoring response from Gemini response", logger.ErrorField(err), logger.StringField("response", rawJSON))
 		return nil, fmt.Errorf("failed to unmarshal position monitoring response from Gemini response: %w", err)
 	}
 
