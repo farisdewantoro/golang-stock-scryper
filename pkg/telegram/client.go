@@ -32,24 +32,34 @@ func NewClient(botToken string, chatID int64) (Notifier, error) {
 
 // SendMessage sends a message to the configured Telegram chat.
 func (c *client) SendMessage(text string, msgConfig ...tgbotapi.MessageConfig) error {
-	msg := tgbotapi.NewMessage(c.chatID, utils.EscapeMarkdownV2(text))
-	msg.ParseMode = tgbotapi.ModeMarkdownV2 // Using Markdown for formatting
+	parseMode := tgbotapi.ModeMarkdownV2
 
 	if len(msgConfig) > 0 {
-		msg.ParseMode = msgConfig[0].ParseMode
+		parseMode = msgConfig[0].ParseMode
 	}
+	if parseMode == tgbotapi.ModeMarkdownV2 || parseMode == tgbotapi.ModeMarkdown {
+		text = utils.EscapeMarkdownV2(text)
+	}
+
+	msg := tgbotapi.NewMessage(c.chatID, text)
+	msg.ParseMode = parseMode
 	_, err := c.bot.Send(msg)
 	return err
 }
 
 // SendMessageUser sends a message to user
 func (c *client) SendMessageUser(text string, chatID int64, msgConfig ...tgbotapi.MessageConfig) error {
-	msg := tgbotapi.NewMessage(chatID, utils.EscapeMarkdownV2(text))
-	msg.ParseMode = tgbotapi.ModeMarkdownV2 // Using Markdown for formatting
+	parseMode := tgbotapi.ModeMarkdownV2
 
 	if len(msgConfig) > 0 {
-		msg.ParseMode = msgConfig[0].ParseMode
+		parseMode = msgConfig[0].ParseMode
 	}
+	if parseMode == tgbotapi.ModeMarkdownV2 || parseMode == tgbotapi.ModeMarkdown {
+		text = utils.EscapeMarkdownV2(text)
+	}
+
+	msg := tgbotapi.NewMessage(chatID, text)
+	msg.ParseMode = parseMode
 	_, err := c.bot.Send(msg)
 	return err
 }
