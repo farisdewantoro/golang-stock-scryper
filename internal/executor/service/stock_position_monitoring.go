@@ -14,6 +14,7 @@ import (
 	"golang-stock-scryper/pkg/utils"
 	"time"
 
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 )
@@ -185,10 +186,13 @@ func (s *stockPositionMonitoringService) Execute(ctx context.Context, req dto.St
 		return err
 	}
 
+	shouldSendTelegram := (stockPosition.MonitorPosition &&
+		aiResp.Recommendation.Action != "HOLD" && aiResp.Recommendation.ConfidenceLevel >= 60) || req.SendToTelegram
+
 	err = s.stockPositionMonitoringRepo.Create(ctx, &entity.StockPositionMonitoring{
 		UserID:          stockPosition.UserID,
 		StockPositionID: stockPosition.ID,
-		TriggeredAlert:  stockPosition.MonitorPosition,
+		TriggeredAlert:  shouldSendTelegram,
 		Interval:        req.Interval,
 		Range:           req.Range,
 		Signal:          aiResp.Recommendation.Action,
@@ -203,21 +207,22 @@ func (s *stockPositionMonitoringService) Execute(ctx context.Context, req dto.St
 		return err
 	}
 
-	shouldSendTelegram := (stockPosition.MonitorPosition &&
-		aiResp.Recommendation.Action != "HOLD" && aiResp.Recommendation.ConfidenceLevel >= 60)
-
-	if req.SendToTelegram || shouldSendTelegram {
+	if shouldSendTelegram {
+		msgConfig := tgbotapi.MessageConfig{
+			ParseMode: tgbotapi.ModeHTML,
+		}
 		msg := telegram.FormatPositionMonitoringMessage(aiResp)
-		if err := s.telegramBot.SendMessageUser(msg, int64(stockPosition.User.TelegramID)); err != nil {
+		if err := s.telegramBot.SendMessageUser(msg, int64(stockPosition.User.TelegramID), msgConfig); err != nil {
 			s.log.Error("Failed to send notification", logger.ErrorField(err))
 			return nil
 		}
 
-		stockPosition.LastPriceAlertAt = utils.ToPointer(utils.TimeNowWIB())
+		stockPosition.LastMonitorPositionAt = utils.ToPointer(utils.TimeNowWIB())
 		errSql := s.stockPositionRepo.Update(ctx, stockPosition)
 		if errSql != nil {
 			s.log.Error("Failed to update stock position", logger.ErrorField(errSql), logger.StringField("stock_code", stockPosition.StockCode))
 		}
+
 	}
 
 	return nil

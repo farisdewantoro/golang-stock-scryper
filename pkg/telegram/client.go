@@ -8,8 +8,8 @@ import (
 
 // Notifier defines the interface for a Telegram notifier.
 type Notifier interface {
-	SendMessage(text string) error
-	SendMessageUser(text string, chatID int64) error
+	SendMessage(text string, msgConfig ...tgbotapi.MessageConfig) error
+	SendMessageUser(text string, chatID int64, msgConfig ...tgbotapi.MessageConfig) error
 }
 
 // client is an implementation of Notifier.
@@ -31,17 +31,25 @@ func NewClient(botToken string, chatID int64) (Notifier, error) {
 }
 
 // SendMessage sends a message to the configured Telegram chat.
-func (c *client) SendMessage(text string) error {
+func (c *client) SendMessage(text string, msgConfig ...tgbotapi.MessageConfig) error {
 	msg := tgbotapi.NewMessage(c.chatID, utils.EscapeMarkdownV2(text))
 	msg.ParseMode = tgbotapi.ModeMarkdownV2 // Using Markdown for formatting
+
+	if len(msgConfig) > 0 {
+		msg.ParseMode = msgConfig[0].ParseMode
+	}
 	_, err := c.bot.Send(msg)
 	return err
 }
 
 // SendMessageUser sends a message to user
-func (c *client) SendMessageUser(text string, chatID int64) error {
+func (c *client) SendMessageUser(text string, chatID int64, msgConfig ...tgbotapi.MessageConfig) error {
 	msg := tgbotapi.NewMessage(chatID, utils.EscapeMarkdownV2(text))
 	msg.ParseMode = tgbotapi.ModeMarkdownV2 // Using Markdown for formatting
+
+	if len(msgConfig) > 0 {
+		msg.ParseMode = msgConfig[0].ParseMode
+	}
 	_, err := c.bot.Send(msg)
 	return err
 }

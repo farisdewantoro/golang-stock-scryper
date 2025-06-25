@@ -14,6 +14,8 @@ import (
 	"golang-stock-scryper/pkg/utils"
 	"time"
 
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+
 	"github.com/redis/go-redis/v9"
 )
 
@@ -153,7 +155,10 @@ func (s *stockAnalyzerService) Execute(ctx context.Context, streamData dto.Strea
 	}
 
 	if streamData.NotifyUser {
-		if err := s.telegramBot.SendMessageUser(telegram.FormatAnalysisMessage(geminiResp), streamData.TelegramID); err != nil {
+		msgCfg := tgbotapi.MessageConfig{
+			ParseMode: tgbotapi.ModeHTML,
+		}
+		if err := s.telegramBot.SendMessageUser(telegram.FormatAnalysisMessage(geminiResp), streamData.TelegramID, msgCfg); err != nil {
 			s.log.Error("Failed to send notification", logger.ErrorField(err))
 		}
 	}

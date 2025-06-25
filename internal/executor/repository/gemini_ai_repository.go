@@ -183,6 +183,7 @@ func (r *geminiAIRepository) AnalyzeStock(ctx context.Context, symbol string, st
 	if err != nil {
 		return nil, err
 	}
+	result.MarketPrice = stockData.MarketPrice
 	result.AnalysisDate = utils.TimeNowWIB()
 	if summary != nil {
 		result.NewsSummary = dto.NewsSummary{
