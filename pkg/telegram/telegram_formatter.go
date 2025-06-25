@@ -262,7 +262,7 @@ func FormatPositionMonitoringMessage(position *dto.PositionMonitoringResponse) s
 	sb.WriteString(fmt.Sprintf("📊 <b>Position Update: %s</b>\n", position.Symbol))
 	sb.WriteString(fmt.Sprintf("💰 Buy: $%d\n", int(position.BuyPrice)))
 	sb.WriteString(fmt.Sprintf("📌 Last Price: $%d %s\n", int(position.MarketPrice), unrealizedPnLPercentageStr))
-	sb.WriteString(fmt.Sprintf("🎯 TP: $%d | SL: $%d\n", int(position.Recommendation.TargetPrice), int(position.Recommendation.CutLoss)))
+	sb.WriteString(fmt.Sprintf("🎯 TP: $%d | SL: $%d\n", int(position.TargetPrice), int(position.StopLoss)))
 	sb.WriteString(fmt.Sprintf("📈 Age: %d days | Remaining: %d days\n\n", ageDays, daysRemaining))
 
 	// Recommendation
