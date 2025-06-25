@@ -96,6 +96,8 @@ type PositionMonitoringResponse struct {
 	MarketPrice          float64                `json:"market_price"`
 	BuyDate              time.Time              `json:"buy_date"`
 	BuyPrice             float64                `json:"buy_price"`
+	TargetPrice          float64                `json:"target_price"`
+	StopLoss             float64                `json:"stop_loss"`
 	MaxHoldingPeriodDays int                    `json:"max_holding_period_days"`
 	TechnicalAnalysis    TechnicalAnalysis      `json:"technical_analysis"`
 	NewsSummary          NewsSummary            `json:"news_summary,omitempty"`

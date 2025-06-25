@@ -214,6 +214,8 @@ func (r *geminiAIRepository) PositionMonitoring(ctx context.Context, request *dt
 	result.BuyDate = request.BuyTime
 	result.MaxHoldingPeriodDays = request.MaxHoldingPeriodDays
 	result.AnalysisDate = utils.TimeNowWIB()
+	result.TargetPrice = request.TargetPrice
+	result.StopLoss = request.StopLoss
 
 	if summary != nil {
 		result.NewsSummary = dto.NewsSummary{
