@@ -60,12 +60,22 @@ Anda adalah analis teknikal berpengalaman di pasar saham Indonesia. Tugas Anda a
 ### HARGA PASAR SAAT INI
 %.2f
 
-### ATURAN REKOMENDASI
-- Berikan sinyal **BUY** hanya jika **risk/reward ratio ≥ 1:3**
-- Jika tidak memenuhi syarat: keluarkan sinyal **HOLD**
-- Gunakan indikator teknikal seperti EMA, MACD, RSI, volume, candlestick, Bollinger Bands
-- Maksimum holding 1-5 hari
-- Cut loss berbasis support kuat
+### KRITERIA PENGAMBILAN KEPUTUSAN:
+Gunakan kombinasi analisis teknikal dan berita. Wajib patuhi semua aturan berikut:
+
+- **BUY** hanya jika:
+  - Trend jangka pendek positif (BULLISH)
+  - EMA, RSI, dan MACD memberikan sinyal mendukung
+  - Volume meningkat
+  - Risk/Reward Ratio **≥ 3.0** (hitung dari Buy Price, Target Price, dan Cut Loss)
+  - Berita memiliki Confidence Score ≥ 0.6 dan berdampak **bullish atau netral**
+
+- **HOLD** jika:
+  - Trend belum konklusif atau indikator tidak seragam
+  - RRR < 3.0
+  - Berita belum mendukung atau dampaknya belum cukup kuat
+
+- Semua angka dan penilaian harus **konsisten secara logis dan matematis**. Jangan berikan sinyal BUY jika tidak memenuhi semua syarat di atas.
 
 ### FORMAT OUTPUT (JSON)
 {
