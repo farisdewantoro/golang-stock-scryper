@@ -188,8 +188,8 @@ func FormatAnalysisMessage(analysis *dto.IndividualAnalysisResponse) string {
 	var sb strings.Builder
 
 	sb.WriteString(fmt.Sprintf("📊 <b>Analysis for %s</b>\n", analysis.Symbol))
-	sb.WriteString(fmt.Sprintf("🎯 Signal: <b>%s</b>\n\n", analysis.Recommendation.Action))
-	sb.WriteString(fmt.Sprintf("📌 Last Price (%s): $%d\n", analysis.AnalysisDate.Format("2006-01-02 15:04:05"), int(analysis.MarketPrice)))
+	sb.WriteString(fmt.Sprintf("🎯 Signal: <b>%s</b>\n", analysis.Recommendation.Action))
+	sb.WriteString(fmt.Sprintf("📌 Last Price: $%d\n\n", int(analysis.MarketPrice)))
 
 	// Recommendation
 	sb.WriteString("💡 <b>Recommendation:</b>\n")
@@ -261,7 +261,7 @@ func FormatPositionMonitoringMessage(position *dto.PositionMonitoringResponse) s
 
 	sb.WriteString(fmt.Sprintf("📊 <b>Position Update: %s</b>\n", position.Symbol))
 	sb.WriteString(fmt.Sprintf("💰 Buy: $%d\n", int(position.BuyPrice)))
-	sb.WriteString(fmt.Sprintf("📌 Last Price (%s): $%d %s\n", position.AnalysisDate.Format("2006-01-02 15:04:05"), int(position.MarketPrice), unrealizedPnLPercentageStr))
+	sb.WriteString(fmt.Sprintf("📌 Last Price: $%d %s\n", int(position.MarketPrice), unrealizedPnLPercentageStr))
 	sb.WriteString(fmt.Sprintf("🎯 TP: $%d | SL: $%d\n", int(position.Recommendation.TargetPrice), int(position.Recommendation.CutLoss)))
 	sb.WriteString(fmt.Sprintf("📈 Age: %d days | Remaining: %d days\n\n", ageDays, daysRemaining))
 
