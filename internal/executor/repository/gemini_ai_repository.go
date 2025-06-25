@@ -201,6 +201,32 @@ func (r *geminiAIRepository) AnalyzeStock(ctx context.Context, symbol string, st
 	return result, nil
 }
 
+func (r *geminiAIRepository) AnalyzeStockMultiTimeframe(ctx context.Context, symbol string, stockData *dto.StockDataMultiTimeframe, summary *entity.StockNewsSummary) (*dto.IndividualAnalysisResponseMultiTimeframe, error) {
+	prompt := BuildIndividualAnalysisMultiTimeframePrompt(ctx, symbol, stockData, summary)
+
+	geminiResp, err := r.executeGeminiAIRequest(ctx, prompt)
+	if err != nil {
+		return nil, err
+	}
+
+	result, err := r.parseIndividualAnalysisMultiTimeframeResponse(geminiResp)
+	if err != nil {
+		return nil, err
+	}
+	result.MarketPrice = stockData.MarketPrice
+	result.AnalysisDate = utils.TimeNowWIB()
+	result.Symbol = symbol
+	if summary != nil && result.IsUsedNews {
+		result.NewsSummary = dto.NewsSummary{
+			ConfidenceScore: summary.SummaryConfidenceScore,
+			Sentiment:       summary.SummarySentiment,
+			Impact:          summary.SummaryImpact,
+			Reasoning:       summary.Reasoning,
+		}
+	}
+	return result, nil
+}
+
 func (r *geminiAIRepository) PositionMonitoring(ctx context.Context, request *dto.PositionMonitoringRequest, stockData *dto.StockData, summary *entity.StockNewsSummary) (*dto.PositionMonitoringResponse, error) {
 	prompt := BuildPositionMonitoringPrompt(ctx, request, stockData, summary)
 
@@ -221,6 +247,39 @@ func (r *geminiAIRepository) PositionMonitoring(ctx context.Context, request *dt
 	result.AnalysisDate = utils.TimeNowWIB()
 	result.TargetPrice = request.TargetPrice
 	result.StopLoss = request.StopLoss
+
+	if summary != nil {
+		result.NewsSummary = dto.NewsSummary{
+			ConfidenceScore: summary.SummaryConfidenceScore,
+			Sentiment:       summary.SummarySentiment,
+			Impact:          summary.SummaryImpact,
+			Reasoning:       summary.Reasoning,
+		}
+	}
+	return result, nil
+}
+
+func (r *geminiAIRepository) PositionMonitoringMultiTimeframe(ctx context.Context, request *dto.PositionMonitoringRequest, stockData *dto.StockDataMultiTimeframe, summary *entity.StockNewsSummary) (*dto.PositionMonitoringResponseMultiTimeframe, error) {
+	prompt := BuildPositionMonitoringMultiTimeframePrompt(ctx, request, stockData, summary)
+
+	geminiResp, err := r.executeGeminiAIRequest(ctx, prompt)
+	if err != nil {
+		return nil, err
+	}
+
+	result, err := r.parsePositionMonitoringMultiTimeframeResponse(geminiResp)
+	if err != nil {
+		return nil, err
+	}
+
+	result.MarketPrice = stockData.MarketPrice
+	result.BuyPrice = request.BuyPrice
+	result.BuyDate = request.BuyTime
+	result.MaxHoldingPeriodDays = request.MaxHoldingPeriodDays
+	result.AnalysisDate = utils.TimeNowWIB()
+	result.TargetPrice = request.TargetPrice
+	result.CutLoss = request.StopLoss
+	result.Symbol = request.Symbol
 
 	if summary != nil {
 		result.NewsSummary = dto.NewsSummary{
@@ -259,6 +318,40 @@ func (r *geminiAIRepository) parsePositionMonitoringResponse(resp *dto.GeminiAPI
 	rawJSON = strings.Trim(rawJSON, "`json\n`")
 
 	var result dto.PositionMonitoringResponse
+	if err := json.Unmarshal([]byte(rawJSON), &result); err != nil {
+		r.logger.Error("Failed to unmarshal position monitoring response from Gemini response", logger.ErrorField(err), logger.StringField("response", rawJSON))
+		return nil, fmt.Errorf("failed to unmarshal position monitoring response from Gemini response: %w", err)
+	}
+
+	return &result, nil
+}
+
+func (r *geminiAIRepository) parseIndividualAnalysisMultiTimeframeResponse(resp *dto.GeminiAPIResponse) (*dto.IndividualAnalysisResponseMultiTimeframe, error) {
+	if len(resp.Candidates) == 0 || len(resp.Candidates[0].Content.Parts) == 0 {
+		return nil, fmt.Errorf("no content found in Gemini response")
+	}
+
+	rawJSON := resp.Candidates[0].Content.Parts[0].Text
+	rawJSON = strings.Trim(rawJSON, "`json\n`")
+
+	var result dto.IndividualAnalysisResponseMultiTimeframe
+	if err := json.Unmarshal([]byte(rawJSON), &result); err != nil {
+		r.logger.Error("Failed to unmarshal individual analysis response from Gemini response", logger.ErrorField(err), logger.StringField("response", rawJSON))
+		return nil, fmt.Errorf("failed to unmarshal individual analysis response from Gemini response: %w", err)
+	}
+
+	return &result, nil
+}
+
+func (r *geminiAIRepository) parsePositionMonitoringMultiTimeframeResponse(resp *dto.GeminiAPIResponse) (*dto.PositionMonitoringResponseMultiTimeframe, error) {
+	if len(resp.Candidates) == 0 || len(resp.Candidates[0].Content.Parts) == 0 {
+		return nil, fmt.Errorf("no content found in Gemini response")
+	}
+
+	rawJSON := resp.Candidates[0].Content.Parts[0].Text
+	rawJSON = strings.Trim(rawJSON, "`json\n`")
+
+	var result dto.PositionMonitoringResponseMultiTimeframe
 	if err := json.Unmarshal([]byte(rawJSON), &result); err != nil {
 		r.logger.Error("Failed to unmarshal position monitoring response from Gemini response", logger.ErrorField(err), logger.StringField("response", rawJSON))
 		return nil, fmt.Errorf("failed to unmarshal position monitoring response from Gemini response: %w", err)

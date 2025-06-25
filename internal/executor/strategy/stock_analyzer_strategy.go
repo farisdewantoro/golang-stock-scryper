@@ -76,8 +76,6 @@ func (s *StockAnalyzerStrategy) Execute(ctx context.Context, job *entity.Job) (s
 
 		streamData := &dto.StreamDataStockAnalyzer{
 			StockCode: stock.Code,
-			Interval:  payload.Interval,
-			Range:     payload.Range,
 		}
 
 		streamDataJSON, err := json.Marshal(streamData)

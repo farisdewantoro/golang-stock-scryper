@@ -20,6 +20,7 @@ import (
 
 type YahooFinanceRepository interface {
 	Get(ctx context.Context, param dto.GetStockDataParam) (*dto.StockData, error)
+	GetMultiTimeframe(ctx context.Context, stockCode string) (*dto.StockDataMultiTimeframe, error)
 }
 
 // yahooFinanceRepository is an implementation of NewsAnalyzerRepository that uses the Google Gemini API.
@@ -40,6 +41,39 @@ func NewYahooFinanceRepository(cfg *config.Config, log *logger.Logger) (YahooFin
 		cfg:            cfg,
 		logger:         log,
 		requestLimiter: requestLimiter,
+	}, nil
+}
+
+func (r *yahooFinanceRepository) GetMultiTimeframe(ctx context.Context, stockCode string) (*dto.StockDataMultiTimeframe, error) {
+	stockData1d, err := r.Get(ctx, dto.GetStockDataParam{
+		StockCode: stockCode,
+		Range:     "3m",
+		Interval:  "1d",
+	})
+	if err != nil {
+		return nil, err
+	}
+	stockData4h, err := r.Get(ctx, dto.GetStockDataParam{
+		StockCode: stockCode,
+		Range:     "1m",
+		Interval:  "4h",
+	})
+	if err != nil {
+		return nil, err
+	}
+	stockData1h, err := r.Get(ctx, dto.GetStockDataParam{
+		StockCode: stockCode,
+		Range:     "14d",
+		Interval:  "1h",
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &dto.StockDataMultiTimeframe{
+		MarketPrice: stockData1d.MarketPrice,
+		OHLCV1D:     stockData1d.OHLCV,
+		OHLCV4H:     stockData4h.OHLCV,
+		OHLCV1H:     stockData1h.OHLCV,
 	}, nil
 }
 

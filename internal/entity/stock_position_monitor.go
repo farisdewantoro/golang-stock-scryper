@@ -15,8 +15,6 @@ type StockPositionMonitoring struct {
 	ConfidenceScore float64        `json:"confidence_score"`
 	TechnicalScore  float64        `json:"technical_score"`
 	NewsScore       float64        `json:"news_score"`
-	Interval        string         `json:"interval"`
-	Range           string         `json:"range"`
 	TriggeredAlert  bool           `json:"triggered_alert"`
 	Data            datatypes.JSON `gorm:"type:jsonb"`
 	CreatedAt       time.Time      `json:"created_at"`

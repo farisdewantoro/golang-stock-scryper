@@ -22,11 +22,6 @@ type StockPositionMonitorStrategy struct {
 	stockPositionRepo repository.StockPositionsRepository
 }
 
-type StockPositionMonitorPayload struct {
-	Interval string `json:"interval"`
-	Range    string `json:"range"`
-}
-
 type StockPositionMonitorResult struct {
 	StockCode string `json:"stock_code"`
 	ID        uint   `json:"id"`
@@ -46,11 +41,6 @@ func (s *StockPositionMonitorStrategy) GetType() entity.JobType {
 }
 
 func (s *StockPositionMonitorStrategy) Execute(ctx context.Context, job *entity.Job) (string, error) {
-	var payload StockPositionMonitorPayload
-	if err := json.Unmarshal(job.Payload, &payload); err != nil {
-		s.logger.Error("Failed to unmarshal job payload", logger.ErrorField(err), logger.Field("job_id", job.ID))
-		return "", fmt.Errorf("failed to unmarshal job payload: %w", err)
-	}
 
 	stockPositions, err := s.stockPositionRepo.Get(ctx, dto.GetStockPositionsParam{
 		MonitorPosition: utils.ToPointer(true),
@@ -74,8 +64,6 @@ func (s *StockPositionMonitorStrategy) Execute(ctx context.Context, job *entity.
 			StockPositionID: stockPosition.ID,
 			UserID:          stockPosition.UserID,
 			StockCode:       stockPosition.StockCode,
-			Interval:        payload.Interval,
-			Range:           payload.Range,
 		}
 		streamDataJSON, err := json.Marshal(streamData)
 		if err != nil {

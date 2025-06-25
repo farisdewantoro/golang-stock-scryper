@@ -48,6 +48,31 @@ type IndividualAnalysisResponse struct {
 	NewsSummary       NewsSummary       `json:"news_summary,omitempty"`
 }
 
+type IndividualAnalysisResponseMultiTimeframe struct {
+	MarketPrice     float64   `json:"market_price"`
+	Symbol          string    `json:"symbol"`
+	AnalysisDate    time.Time `json:"analysis_date"`
+	Action          string    `json:"action"`
+	BuyPrice        float64   `json:"buy_price,omitempty"`
+	TargetPrice     float64   `json:"target_price,omitempty"`
+	CutLoss         float64   `json:"cut_loss,omitempty"`
+	ConfidenceLevel int       `json:"confidence_level"`
+	Reasoning       string    `json:"reasoning"`
+	RiskRewardRatio float64   `json:"risk_reward_ratio"`
+	KeyInsights     []string  `json:"key_insights"`
+	IsUsedNews      bool      `json:"is_used_news"`
+	TechnicalScore  int       `json:"technical_score"`
+
+	TimeframeSummaries TimeframeSummaries `json:"timeframe_summaries"`
+	NewsSummary        NewsSummary        `json:"news_summary,omitempty"`
+}
+
+type TimeframeSummaries struct {
+	TimeFrame1D string `json:"time_frame_1d"`
+	TimeFrame4H string `json:"time_frame_4h"`
+	TimeFrame1H string `json:"time_frame_1h"`
+}
+
 // Technical Analysis
 type TechnicalAnalysis struct {
 	Trend                  string   `json:"trend"`
@@ -113,4 +138,27 @@ type RecommendationPosition struct {
 	ExitReasoning   string   `json:"exit_reasoning"`
 	ExitConditions  []string `json:"exit_conditions"`
 	RiskRewardRatio float64  `json:"risk_reward_ratio"`
+}
+
+type PositionMonitoringResponseMultiTimeframe struct {
+	MarketPrice          float64            `json:"market_price"`
+	Symbol               string             `json:"symbol"`
+	AnalysisDate         time.Time          `json:"analysis_date"`
+	Action               string             `json:"action"`
+	BuyPrice             float64            `json:"buy_price,omitempty"`
+	BuyDate              time.Time          `json:"buy_date,omitempty"`
+	MaxHoldingPeriodDays int                `json:"max_holding_period_days,omitempty"`
+	TargetPrice          float64            `json:"target_price,omitempty"`
+	CutLoss              float64            `json:"cut_loss,omitempty"`
+	ExitTargetPrice      float64            `json:"exit_target_price,omitempty"`
+	ExitCutLoss          float64            `json:"exit_cut_loss,omitempty"`
+	ConfidenceLevel      int                `json:"confidence_level"`
+	Reasoning            string             `json:"reasoning"`
+	RiskRewardRatio      float64            `json:"risk_reward_ratio"`
+	KeyInsights          []string           `json:"key_insights"`
+	ExitConditions       []string           `json:"exit_conditions"`
+	IsUsedNews           bool               `json:"is_used_news"`
+	TechnicalScore       int                `json:"technical_score"`
+	TimeframeSummaries   TimeframeSummaries `json:"timeframe_summaries"`
+	NewsSummary          NewsSummary        `json:"news_summary,omitempty"`
 }

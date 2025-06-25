@@ -15,17 +15,16 @@ import (
 	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-
 	"github.com/redis/go-redis/v9"
 )
 
-type StockAnalyzerService interface {
+type StockAnalyzerMultiTimeframeService interface {
 	ProcessTask(ctx context.Context)
 	ProcessRetries(ctx context.Context)
 	Execute(ctx context.Context, data dto.StreamDataStockAnalyzer) error
 }
 
-type stockAnalyzerService struct {
+type stockAnalyzerMultiTimeframeService struct {
 	cfg                  *config.Config
 	log                  *logger.Logger
 	redisClient          *redis.Client
@@ -36,14 +35,14 @@ type stockAnalyzerService struct {
 	telegramBot          telegram.Notifier
 }
 
-func NewStockAnalyzerService(cfg *config.Config, log *logger.Logger,
+func NewStockAnalyzerMultiTimeframeService(cfg *config.Config, log *logger.Logger,
 	redisClient *redis.Client,
 	aiRepo repository.AIRepository,
 	yahooFinance repository.YahooFinanceRepository,
 	stockNewsSummaryRepo repository.StockNewsSummaryRepository,
 	stockSignalRepo repository.StockSignalRepository,
-	telegramBot telegram.Notifier) StockAnalyzerService {
-	return &stockAnalyzerService{
+	telegramBot telegram.Notifier) StockAnalyzerMultiTimeframeService {
+	return &stockAnalyzerMultiTimeframeService{
 		cfg:                  cfg,
 		log:                  log,
 		redisClient:          redisClient,
@@ -55,7 +54,7 @@ func NewStockAnalyzerService(cfg *config.Config, log *logger.Logger,
 	}
 }
 
-func (s *stockAnalyzerService) ProcessTask(ctx context.Context) {
+func (s *stockAnalyzerMultiTimeframeService) ProcessTask(ctx context.Context) {
 	streams, err := s.redisClient.XReadGroup(ctx, &redis.XReadGroupArgs{
 		Group:    common.RedisStreamGroup,
 		Consumer: common.RedisStreamConsumer,
@@ -94,10 +93,10 @@ func (s *stockAnalyzerService) ProcessTask(ctx context.Context) {
 		return
 	}
 
-	s.log.Debug("Processing stock analyzer task", logger.StringField("stock_code", streamData.StockCode), logger.StringField("interval", streamData.Interval), logger.StringField("range", streamData.Range))
+	s.log.Debug("Processing stock analyzer task", logger.StringField("stock_code", streamData.StockCode))
 
 	if err := s.Execute(ctx, streamData); err != nil {
-		s.log.Error("Failed to analyze stock", logger.ErrorField(err), logger.Field("message_id", message.ID), logger.StringField("stock_code", streamData.StockCode), logger.StringField("interval", streamData.Interval), logger.StringField("range", streamData.Range))
+		s.log.Error("Failed to analyze stock", logger.ErrorField(err), logger.Field("message_id", message.ID), logger.StringField("stock_code", streamData.StockCode))
 		return
 	}
 	if err := s.AckNDel(ctx, common.RedisStreamStockAnalyzer, message.ID); err != nil {
@@ -105,18 +104,15 @@ func (s *stockAnalyzerService) ProcessTask(ctx context.Context) {
 		return
 	}
 
-	s.log.Debug("Stock analyzer task processed successfully", logger.StringField("stock_code", streamData.StockCode), logger.StringField("interval", streamData.Interval), logger.StringField("range", streamData.Range))
+	s.log.Debug("Stock analyzer task processed successfully", logger.StringField("stock_code", streamData.StockCode))
 
 }
 
-func (s *stockAnalyzerService) Execute(ctx context.Context, streamData dto.StreamDataStockAnalyzer) error {
-	stockData, err := s.yahooFinance.Get(ctx, dto.GetStockDataParam{
-		StockCode: streamData.StockCode,
-		Interval:  streamData.Interval,
-		Range:     streamData.Range,
-	})
+func (s *stockAnalyzerMultiTimeframeService) Execute(ctx context.Context, streamData dto.StreamDataStockAnalyzer) error {
+
+	stockDataMultiTimeframe, err := s.yahooFinance.GetMultiTimeframe(ctx, streamData.StockCode)
 	if err != nil {
-		s.log.Error("Failed to get stock data", logger.ErrorField(err))
+		s.log.Error("Failed to get stock data multi timeframe", logger.ErrorField(err))
 		return err
 	}
 
@@ -126,7 +122,7 @@ func (s *stockAnalyzerService) Execute(ctx context.Context, streamData dto.Strea
 		return err
 	}
 
-	geminiResp, err := s.aiRepo.AnalyzeStock(ctx, streamData.StockCode, stockData, lastSummary)
+	geminiResp, err := s.aiRepo.AnalyzeStockMultiTimeframe(ctx, streamData.StockCode, stockDataMultiTimeframe, lastSummary)
 	if err != nil {
 		s.log.Error("Failed to analyze stock", logger.ErrorField(err))
 		return err
@@ -140,13 +136,11 @@ func (s *stockAnalyzerService) Execute(ctx context.Context, streamData dto.Strea
 
 	err = s.stockSignalRepo.Create(ctx, &entity.StockSignal{
 		StockCode:       streamData.StockCode,
-		Interval:        streamData.Interval,
-		Range:           streamData.Range,
-		Signal:          geminiResp.Recommendation.Action,
-		ConfidenceScore: float64(geminiResp.Recommendation.ConfidenceLevel),
-		TechnicalScore:  geminiResp.TechnicalAnalysis.TechnicalScore,
+		Signal:          geminiResp.Action,
+		ConfidenceScore: float64(geminiResp.ConfidenceLevel),
 		NewsScore:       geminiResp.NewsSummary.ConfidenceScore,
 		Data:            dataJSON,
+		TechnicalScore:  geminiResp.TechnicalScore,
 	})
 
 	if err != nil {
@@ -166,7 +160,7 @@ func (s *stockAnalyzerService) Execute(ctx context.Context, streamData dto.Strea
 	return nil
 }
 
-func (s *stockAnalyzerService) AckNDel(ctx context.Context, streamName string, messageID string) error {
+func (s *stockAnalyzerMultiTimeframeService) AckNDel(ctx context.Context, streamName string, messageID string) error {
 	if err := s.redisClient.XAck(ctx, streamName, common.RedisStreamGroup, messageID).Err(); err != nil {
 		s.log.Error("Failed to acknowledge stock analyzer task on retry", logger.ErrorField(err), logger.Field("message_id", messageID))
 		return err
@@ -178,7 +172,7 @@ func (s *stockAnalyzerService) AckNDel(ctx context.Context, streamName string, m
 	return nil
 }
 
-func (s *stockAnalyzerService) ProcessRetries(ctx context.Context) {
+func (s *stockAnalyzerMultiTimeframeService) ProcessRetries(ctx context.Context) {
 	msgs, _, err := s.redisClient.XAutoClaim(ctx, &redis.XAutoClaimArgs{
 		Stream:   common.RedisStreamStockAnalyzer,
 		Group:    common.RedisStreamGroup,
@@ -235,23 +229,21 @@ func (s *stockAnalyzerService) ProcessRetries(ctx context.Context) {
 	}
 
 	if err := s.Execute(ctx, streamData); err != nil {
-		s.log.Error("Failed to analyze stock", logger.ErrorField(err), logger.Field("message_id", msg.ID), logger.StringField("stock_code", streamData.StockCode), logger.StringField("interval", streamData.Interval), logger.StringField("range", streamData.Range))
+		s.log.Error("Failed to analyze stock", logger.ErrorField(err), logger.Field("message_id", msg.ID), logger.StringField("stock_code", streamData.StockCode))
 
 		if pendingInfo[0].RetryCount+1 >= int64(s.cfg.Executor.RedisStreamStockAnalyzerMaxRetry) {
 			s.log.Error("pending msg retry count exceeded",
 				logger.StringField("stream", common.RedisStreamStockAnalyzer),
 				logger.StringField("message_id", msg.ID),
 				logger.StringField("stock_code", streamData.StockCode),
-				logger.StringField("interval", streamData.Interval),
-				logger.StringField("range", streamData.Range),
 				logger.IntField("retry_count", int(pendingInfo[0].RetryCount+1)),
 				logger.IntField("max_retry", s.cfg.Executor.RedisStreamStockAnalyzerMaxRetry),
 			)
 			errType := fmt.Sprintf("Retry count exceeded for event %s", common.RedisStreamStockAnalyzer)
-			data := fmt.Sprintf("%s | %s | %s", streamData.StockCode, streamData.Interval, streamData.Range)
-			msgTelegram := telegram.FormatErrorAlertMessage(utils.TimeNowWIB(), errType, err.Error(), data)
+			rawJson, _ := json.Marshal(streamData)
+			msgTelegram := telegram.FormatErrorAlertMessage(utils.TimeNowWIB(), errType, err.Error(), string(rawJson))
 			if err := s.telegramBot.SendMessage(msgTelegram); err != nil {
-				s.log.Error("Failed to send telegram message retry exceeded ", logger.ErrorField(err), logger.StringField("stock_code", streamData.StockCode), logger.StringField("interval", streamData.Interval), logger.StringField("range", streamData.Range))
+				s.log.Error("Failed to send telegram message retry exceeded ", logger.ErrorField(err), logger.StringField("stock_code", streamData.StockCode))
 			}
 			if err := s.AckNDel(ctx, common.RedisStreamStockAnalyzer, msg.ID); err != nil {
 				s.log.Error("Failed to acknowledge and delete stock analyzer task", logger.ErrorField(err), logger.Field("message_id", msg.ID))
@@ -267,5 +259,5 @@ func (s *stockAnalyzerService) ProcessRetries(ctx context.Context) {
 		s.log.Error("Failed to acknowledge and delete stock analyzer task", logger.ErrorField(err), logger.Field("message_id", msg.ID))
 		return
 	}
-	s.log.Info("Retry Stock analyzer task processed successfully", logger.StringField("stock_code", streamData.StockCode), logger.StringField("interval", streamData.Interval), logger.StringField("range", streamData.Range))
+	s.log.Info("Retry Stock analyzer task processed successfully", logger.StringField("stock_code", streamData.StockCode))
 }

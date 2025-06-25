@@ -187,3 +187,11 @@ func (r *openaiAIRepository) parseResponseJSON(resp *dto.OpenAPIRes, result inte
 
 	return nil
 }
+
+func (r *openaiAIRepository) AnalyzeStockMultiTimeframe(ctx context.Context, symbol string, stockData *dto.StockDataMultiTimeframe, summary *entity.StockNewsSummary) (*dto.IndividualAnalysisResponseMultiTimeframe, error) {
+	return nil, nil
+}
+
+func (r *openaiAIRepository) PositionMonitoringMultiTimeframe(ctx context.Context, request *dto.PositionMonitoringRequest, stockData *dto.StockDataMultiTimeframe, summary *entity.StockNewsSummary) (*dto.PositionMonitoringResponseMultiTimeframe, error) {
+	return nil, nil
+}

@@ -16,6 +16,13 @@ type StockData struct {
 	OHLCV       []StockOHLCV `json:"ohlc"`
 }
 
+type StockDataMultiTimeframe struct {
+	MarketPrice float64      `json:"market_price"`
+	OHLCV1D     []StockOHLCV `json:"ohlc_1d"`
+	OHLCV4H     []StockOHLCV `json:"ohlc_4h"`
+	OHLCV1H     []StockOHLCV `json:"ohlc_1h"`
+}
+
 type GetStockDataParam struct {
 	StockCode string `json:"stock_code"`
 	Range     string `json:"range"`

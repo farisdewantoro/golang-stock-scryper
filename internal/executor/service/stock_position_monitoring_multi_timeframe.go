@@ -19,13 +19,13 @@ import (
 	"go.uber.org/zap"
 )
 
-type StockPositionMonitoringService interface {
+type StockPositionMonitoringMultiTimeframeService interface {
 	ProcessTask(ctx context.Context)
 	ProcessRetries(ctx context.Context)
 	Execute(ctx context.Context, streamData dto.StreamDataStockPositionMonitor) error
 }
 
-type stockPositionMonitoringService struct {
+type stockPositionMonitoringMultiTimeframeService struct {
 	cfg                         *config.Config
 	log                         *logger.Logger
 	redisClient                 *redis.Client
@@ -37,15 +37,15 @@ type stockPositionMonitoringService struct {
 	telegramBot                 telegram.Notifier
 }
 
-func NewStockPositionMonitoringService(cfg *config.Config, log *logger.Logger,
+func NewStockPositionMonitoringMultiTimeframeService(cfg *config.Config, log *logger.Logger,
 	redisClient *redis.Client,
 	aiRepo repository.AIRepository,
 	yahooFinance repository.YahooFinanceRepository,
 	stockPositionRepo repository.StockPositionsRepository,
 	stockNewsSummaryRepo repository.StockNewsSummaryRepository,
 	stockPositionMonitoringRepo repository.StockPositionsMonitoringsRepository,
-	telegramBot telegram.Notifier) StockPositionMonitoringService {
-	return &stockPositionMonitoringService{
+	telegramBot telegram.Notifier) StockPositionMonitoringMultiTimeframeService {
+	return &stockPositionMonitoringMultiTimeframeService{
 		cfg:                         cfg,
 		log:                         log,
 		redisClient:                 redisClient,
@@ -58,7 +58,7 @@ func NewStockPositionMonitoringService(cfg *config.Config, log *logger.Logger,
 	}
 }
 
-func (s *stockPositionMonitoringService) ProcessTask(ctx context.Context) {
+func (s *stockPositionMonitoringMultiTimeframeService) ProcessTask(ctx context.Context) {
 	streams, err := s.redisClient.XReadGroup(ctx, &redis.XReadGroupArgs{
 		Group:    common.RedisStreamGroup,
 		Consumer: common.RedisStreamConsumer,
@@ -99,8 +99,6 @@ func (s *stockPositionMonitoringService) ProcessTask(ctx context.Context) {
 
 	loggerFields := []zap.Field{
 		logger.StringField("stock_code", streamData.StockCode),
-		logger.StringField("interval", streamData.Interval),
-		logger.StringField("range", streamData.Range),
 		logger.StringField("message_id", message.ID),
 	}
 
@@ -122,16 +120,7 @@ func (s *stockPositionMonitoringService) ProcessTask(ctx context.Context) {
 
 }
 
-func (s *stockPositionMonitoringService) Execute(ctx context.Context, req dto.StreamDataStockPositionMonitor) error {
-	stockData, err := s.yahooFinance.Get(ctx, dto.GetStockDataParam{
-		StockCode: req.StockCode,
-		Interval:  req.Interval,
-		Range:     req.Range,
-	})
-	if err != nil {
-		s.log.Error("Failed to get stock data", logger.ErrorField(err))
-		return err
-	}
+func (s *stockPositionMonitoringMultiTimeframeService) Execute(ctx context.Context, req dto.StreamDataStockPositionMonitor) error {
 
 	stockPositions, err := s.stockPositionRepo.Get(ctx, dto.GetStockPositionsParam{
 		IDs: []uint{req.StockPositionID},
@@ -150,8 +139,6 @@ func (s *stockPositionMonitoringService) Execute(ctx context.Context, req dto.St
 
 	loggerFields := []zap.Field{
 		logger.StringField("stock_code", req.StockCode),
-		logger.StringField("interval", req.Interval),
-		logger.StringField("range", req.Range),
 		logger.IntField("user_id", int(stockPosition.UserID)),
 		logger.IntField("id", int(stockPosition.ID)),
 	}
@@ -166,14 +153,20 @@ func (s *stockPositionMonitoringService) Execute(ctx context.Context, req dto.St
 		return err
 	}
 
-	aiResp, err := s.aiRepo.PositionMonitoring(ctx, &dto.PositionMonitoringRequest{
+	stockDataMultiTimeframe, err := s.yahooFinance.GetMultiTimeframe(ctx, req.StockCode)
+	if err != nil {
+		s.log.Error("Failed to get stock data multi timeframe", logger.ErrorField(err))
+		return err
+	}
+
+	aiResp, err := s.aiRepo.PositionMonitoringMultiTimeframe(ctx, &dto.PositionMonitoringRequest{
 		Symbol:               stockPosition.StockCode,
 		BuyPrice:             stockPosition.BuyPrice,
 		BuyTime:              stockPosition.BuyDate,
 		MaxHoldingPeriodDays: stockPosition.MaxHoldingPeriodDays,
 		TargetPrice:          stockPosition.TakeProfitPrice,
 		StopLoss:             stockPosition.StopLossPrice,
-	}, stockData, lastSummary)
+	}, stockDataMultiTimeframe, lastSummary)
 
 	if err != nil {
 		s.log.Error("Failed to analyze stock", logger.ErrorField(err))
@@ -187,17 +180,15 @@ func (s *stockPositionMonitoringService) Execute(ctx context.Context, req dto.St
 	}
 
 	shouldSendTelegram := (stockPosition.MonitorPosition &&
-		aiResp.Recommendation.Action != "HOLD" && aiResp.Recommendation.ConfidenceLevel >= 60) || req.SendToTelegram
+		aiResp.Action != "HOLD" && aiResp.ConfidenceLevel >= 60) || req.SendToTelegram
 
 	err = s.stockPositionMonitoringRepo.Create(ctx, &entity.StockPositionMonitoring{
 		UserID:          stockPosition.UserID,
 		StockPositionID: stockPosition.ID,
 		TriggeredAlert:  shouldSendTelegram,
-		Interval:        req.Interval,
-		Range:           req.Range,
-		Signal:          aiResp.Recommendation.Action,
-		ConfidenceScore: float64(aiResp.Recommendation.ConfidenceLevel),
-		TechnicalScore:  float64(aiResp.TechnicalAnalysis.TechnicalScore),
+		Signal:          aiResp.Action,
+		ConfidenceScore: float64(aiResp.ConfidenceLevel),
+		TechnicalScore:  float64(aiResp.TechnicalScore),
 		NewsScore:       float64(aiResp.NewsSummary.ConfidenceScore),
 		Data:            dataJSON,
 	})
@@ -228,7 +219,7 @@ func (s *stockPositionMonitoringService) Execute(ctx context.Context, req dto.St
 	return nil
 }
 
-func (s *stockPositionMonitoringService) ProcessRetries(ctx context.Context) {
+func (s *stockPositionMonitoringMultiTimeframeService) ProcessRetries(ctx context.Context) {
 	msgs, _, err := s.redisClient.XAutoClaim(ctx, &redis.XAutoClaimArgs{
 		Stream:   common.RedisStreamStockPositionMonitor,
 		Group:    common.RedisStreamGroup,
@@ -287,28 +278,24 @@ func (s *stockPositionMonitoringService) ProcessRetries(ctx context.Context) {
 	if err := s.Execute(ctx, dto.StreamDataStockPositionMonitor{
 		StockPositionID: streamData.StockPositionID,
 		StockCode:       streamData.StockCode,
-		Interval:        streamData.Interval,
-		Range:           streamData.Range,
 		SendToTelegram:  streamData.SendToTelegram,
 		UserID:          streamData.UserID,
 	}); err != nil {
-		s.log.Error("Failed to analyze stock", logger.ErrorField(err), logger.Field("message_id", msg.ID), logger.StringField("stock_code", streamData.StockCode), logger.StringField("interval", streamData.Interval), logger.StringField("range", streamData.Range))
+		s.log.Error("Failed to analyze stock", logger.ErrorField(err), logger.Field("message_id", msg.ID), logger.StringField("stock_code", streamData.StockCode))
 
 		if pendingInfo[0].RetryCount+1 >= int64(s.cfg.Executor.RedisStreamStockPositionMonitorMaxRetry) {
 			s.log.Error("pending msg retry count exceeded",
 				logger.StringField("stream", common.RedisStreamStockPositionMonitor),
 				logger.StringField("message_id", msg.ID),
 				logger.StringField("stock_code", streamData.StockCode),
-				logger.StringField("interval", streamData.Interval),
-				logger.StringField("range", streamData.Range),
 				logger.IntField("retry_count", int(pendingInfo[0].RetryCount+1)),
 				logger.IntField("max_retry", s.cfg.Executor.RedisStreamStockPositionMonitorMaxRetry),
 			)
 			errType := fmt.Sprintf("Retry count exceeded for event %s", common.RedisStreamStockPositionMonitor)
-			data := fmt.Sprintf("%s | %s | %s", streamData.StockCode, streamData.Interval, streamData.Range)
+			data := fmt.Sprintf("%s", streamData.StockCode)
 			msgTelegram := telegram.FormatErrorAlertMessage(utils.TimeNowWIB(), errType, err.Error(), data)
 			if err := s.telegramBot.SendMessage(msgTelegram); err != nil {
-				s.log.Error("Failed to send telegram message retry exceeded ", logger.ErrorField(err), logger.StringField("stock_code", streamData.StockCode), logger.StringField("interval", streamData.Interval), logger.StringField("range", streamData.Range))
+				s.log.Error("Failed to send telegram message retry exceeded ", logger.ErrorField(err), logger.StringField("stock_code", streamData.StockCode))
 			}
 			if err := s.AckNDel(ctx, common.RedisStreamStockPositionMonitor, msg.ID); err != nil {
 				s.log.Error("Failed to acknowledge and delete stock position monitor task", logger.ErrorField(err), logger.Field("message_id", msg.ID))
@@ -323,11 +310,11 @@ func (s *stockPositionMonitoringService) ProcessRetries(ctx context.Context) {
 		s.log.Error("Failed to acknowledge and delete stock position monitor task", logger.ErrorField(err), logger.Field("message_id", msg.ID))
 		return
 	}
-	s.log.Info("Retry Stock position monitor task processed successfully", logger.StringField("stock_code", streamData.StockCode), logger.StringField("interval", streamData.Interval), logger.StringField("range", streamData.Range))
+	s.log.Info("Retry Stock position monitor task processed successfully", logger.StringField("stock_code", streamData.StockCode))
 
 }
 
-func (s *stockPositionMonitoringService) AckNDel(ctx context.Context, streamName string, messageID string) error {
+func (s *stockPositionMonitoringMultiTimeframeService) AckNDel(ctx context.Context, streamName string, messageID string) error {
 	if err := s.redisClient.XAck(ctx, streamName, common.RedisStreamGroup, messageID).Err(); err != nil {
 		loggerFields := []zap.Field{
 			logger.StringField("stream_name", streamName),

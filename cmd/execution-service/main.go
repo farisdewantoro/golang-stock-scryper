@@ -190,11 +190,11 @@ func runServe(cmd *cobra.Command, args []string) {
 
 	// Initialize executor service
 	executorSvc := service.NewExecutorService(cfg, redisClient.Client, jobRepo, historyRepo, appLogger, strategies)
-	stockAnalyzerSvc := service.NewStockAnalyzerService(cfg, appLogger, redisClient.Client, aiRepo, yahooFinanceRepo, stockNewsSummaryRepo, stockSignalRepo, telegramNotifier)
-	stockPositionMonitoringSvc := service.NewStockPositionMonitoringService(cfg, appLogger, redisClient.Client, aiRepo, yahooFinanceRepo, stockPositionsRepo, stockNewsSummaryRepo, stockPositionMonitoringRepo, telegramNotifier)
+	stockAnalyzerMultiTimeframeSvc := service.NewStockAnalyzerMultiTimeframeService(cfg, appLogger, redisClient.Client, aiRepo, yahooFinanceRepo, stockNewsSummaryRepo, stockSignalRepo, telegramNotifier)
+	stockPositionMonitoringSvc := service.NewStockPositionMonitoringMultiTimeframeService(cfg, appLogger, redisClient.Client, aiRepo, yahooFinanceRepo, stockPositionsRepo, stockNewsSummaryRepo, stockPositionMonitoringRepo, telegramNotifier)
 
 	// Initialize and start the Redis consumer
-	redisConsumer := consumer.NewRedisConsumer(cfg, redisClient.Client, executorSvc, stockAnalyzerSvc, stockPositionMonitoringSvc, appLogger)
+	redisConsumer := consumer.NewRedisConsumer(cfg, redisClient.Client, executorSvc, stockAnalyzerMultiTimeframeSvc, stockPositionMonitoringSvc, appLogger)
 	redisConsumer.Start(ctx)
 
 	appLogger.Info("Execution service started. Waiting for tasks...")
