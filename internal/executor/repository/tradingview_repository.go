@@ -17,7 +17,7 @@ import (
 )
 
 type TradingViewRepository interface {
-	GetStockBuyList(ctx context.Context) ([]string, error)
+	GetStockBuyList(ctx context.Context, payload map[string]interface{}) ([]string, error)
 }
 
 type tradingViewRepository struct {
@@ -40,9 +40,13 @@ func NewTradingViewRepository(cfg *config.Config, log *logger.Logger) TradingVie
 	}
 }
 
-func (r *tradingViewRepository) GetStockBuyList(ctx context.Context) ([]string, error) {
+func (r *tradingViewRepository) GetStockBuyList(ctx context.Context, payload map[string]interface{}) ([]string, error) {
 	url := r.cfg.TradingView.BaseURL + "/indonesia/scan?label-product=screener-stock"
-	body, err := r.sendRequest(ctx, "POST", url, r.cfg.TradingView.PayloadGetStockBuyList)
+	jsonPayload, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+	body, err := r.sendRequest(ctx, "POST", url, string(jsonPayload))
 	if err != nil {
 		return nil, err
 	}

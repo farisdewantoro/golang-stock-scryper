@@ -24,10 +24,11 @@ type StockAnalyzerStrategy struct {
 }
 
 type StockAnalyzerPayload struct {
-	SkipStocks       []string `json:"skip_stocks"`
-	UseTradingView   bool     `json:"use_trading_view"`
-	UseStockList     bool     `json:"use_stock_list"`
-	AdditionalStocks []string `json:"additional_stocks"`
+	SkipStocks       []string               `json:"skip_stocks"`
+	UseTradingView   bool                   `json:"use_trading_view"`
+	UseStockList     bool                   `json:"use_stock_list"`
+	AdditionalStocks []string               `json:"additional_stocks"`
+	TradingViewData  map[string]interface{} `json:"trading_view_data"`
 }
 
 type StockAnalyzerResult struct {
@@ -73,7 +74,7 @@ func (s *StockAnalyzerStrategy) Execute(ctx context.Context, job *entity.Job) (s
 	}
 
 	if payload.UseTradingView {
-		stocksList, err := s.tradingViewRepo.GetStockBuyList(ctx)
+		stocksList, err := s.tradingViewRepo.GetStockBuyList(ctx, payload.TradingViewData)
 		if err != nil {
 			s.logger.Error("Failed to get stocks", logger.ErrorField(err))
 			return "", fmt.Errorf("failed to get stocks: %w", err)

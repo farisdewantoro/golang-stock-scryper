@@ -53,7 +53,6 @@ type Telegram struct {
 type TradingView struct {
 	MaxRequestPerMinute       int     `mapstructure:"max_request_per_minute"`
 	BaseURL                   string  `mapstructure:"base_url"`
-	PayloadGetStockBuyList    string  `mapstructure:"payload_get_stock_buy_list"`
 	BuyListMinTechnicalRating float64 `mapstructure:"buy_list_min_technical_rating"`
 	BuyListMaxStockAnalyze    int     `mapstructure:"buy_list_max_stock_analyze"`
 }
