@@ -86,9 +86,6 @@ func (r *tradingViewRepository) sendRequest(ctx context.Context, method string, 
 		zap.Int("delay", int(r.requestLimiter.Reserve().Delay())),
 		zap.String("payload", jsonStr),
 	}
-	if !r.requestLimiter.Allow() {
-		r.log.WarnContext(ctx, "Rate limit exceeded for TradingView API", fields...)
-	}
 
 	if err := r.requestLimiter.Wait(ctx); err != nil {
 		fields = append(fields, zap.Error(err))
