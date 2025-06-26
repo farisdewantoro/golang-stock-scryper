@@ -176,31 +176,6 @@ func (r *geminiAIRepository) parseSummaryResponse(resp *dto.GeminiAPIResponse) (
 	return &result, nil
 }
 
-func (r *geminiAIRepository) AnalyzeStock(ctx context.Context, symbol string, stockData *dto.StockData, summary *entity.StockNewsSummary) (*dto.IndividualAnalysisResponse, error) {
-	prompt := BuildIndividualAnalysisPrompt(ctx, symbol, stockData, summary)
-
-	geminiResp, err := r.executeGeminiAIRequest(ctx, prompt)
-	if err != nil {
-		return nil, err
-	}
-
-	result, err := r.parseIndividualAnalysisResponse(geminiResp)
-	if err != nil {
-		return nil, err
-	}
-	result.MarketPrice = stockData.MarketPrice
-	result.AnalysisDate = utils.TimeNowWIB()
-	if summary != nil {
-		result.NewsSummary = dto.NewsSummary{
-			ConfidenceScore: summary.SummaryConfidenceScore,
-			Sentiment:       summary.SummarySentiment,
-			Impact:          summary.SummaryImpact,
-			Reasoning:       summary.Reasoning,
-		}
-	}
-	return result, nil
-}
-
 func (r *geminiAIRepository) AnalyzeStockMultiTimeframe(ctx context.Context, symbol string, stockData *dto.StockDataMultiTimeframe, summary *entity.StockNewsSummary) (*dto.IndividualAnalysisResponseMultiTimeframe, error) {
 	prompt := BuildIndividualAnalysisMultiTimeframePrompt(ctx, symbol, stockData, summary)
 
@@ -216,38 +191,6 @@ func (r *geminiAIRepository) AnalyzeStockMultiTimeframe(ctx context.Context, sym
 	result.MarketPrice = stockData.MarketPrice
 	result.AnalysisDate = utils.TimeNowWIB()
 	result.Symbol = symbol
-	if summary != nil && result.IsUsedNews {
-		result.NewsSummary = dto.NewsSummary{
-			ConfidenceScore: summary.SummaryConfidenceScore,
-			Sentiment:       summary.SummarySentiment,
-			Impact:          summary.SummaryImpact,
-			Reasoning:       summary.Reasoning,
-		}
-	}
-	return result, nil
-}
-
-func (r *geminiAIRepository) PositionMonitoring(ctx context.Context, request *dto.PositionMonitoringRequest, stockData *dto.StockData, summary *entity.StockNewsSummary) (*dto.PositionMonitoringResponse, error) {
-	prompt := BuildPositionMonitoringPrompt(ctx, request, stockData, summary)
-
-	geminiResp, err := r.executeGeminiAIRequest(ctx, prompt)
-	if err != nil {
-		return nil, err
-	}
-
-	result, err := r.parsePositionMonitoringResponse(geminiResp)
-	if err != nil {
-		return nil, err
-	}
-
-	result.MarketPrice = stockData.MarketPrice
-	result.BuyPrice = request.BuyPrice
-	result.BuyDate = request.BuyTime
-	result.MaxHoldingPeriodDays = request.MaxHoldingPeriodDays
-	result.AnalysisDate = utils.TimeNowWIB()
-	result.TargetPrice = request.TargetPrice
-	result.StopLoss = request.StopLoss
-
 	if summary != nil {
 		result.NewsSummary = dto.NewsSummary{
 			ConfidenceScore: summary.SummaryConfidenceScore,

@@ -136,10 +136,6 @@ func runServe(cmd *cobra.Command, args []string) {
 			appLogger.Fatal("Failed to initialize Gemini AI repository", zap.Error(err))
 		}
 		aiRepo = repo
-	case "openrouter":
-		aiRepo = repository.NewOpenRouterRepository(cfg, appLogger)
-	case "openai":
-		aiRepo = repository.NewOpenAIRepository(cfg, appLogger)
 	default:
 		appLogger.Fatal("Invalid AI provider specified in config", zap.String("provider", cfg.AI.Provider))
 	}

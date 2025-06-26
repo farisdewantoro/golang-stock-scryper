@@ -211,7 +211,7 @@ func FormatAnalysisMessage(analysis *dto.IndividualAnalysisResponseMultiTimefram
 
 	// News Summary
 	sb.WriteString("\n📰 <b>News Analysis:</b>\n")
-	if analysis.NewsSummary.ConfidenceScore > 0 && analysis.IsUsedNews {
+	if analysis.NewsConfidenceScore > 50 {
 		sb.WriteString(fmt.Sprintf("Confidence Score: %.2f\n", analysis.NewsSummary.ConfidenceScore))
 		sb.WriteString(fmt.Sprintf("Sentiment: %s\n", analysis.NewsSummary.Sentiment))
 		sb.WriteString(fmt.Sprintf("Impact: %s\n\n", analysis.NewsSummary.Impact))
@@ -279,7 +279,7 @@ func FormatPositionMonitoringMessage(position *dto.PositionMonitoringResponseMul
 
 	// News Summary
 	sb.WriteString("\n📰 <b>News Analysis:</b>\n")
-	if position.NewsSummary.ConfidenceScore > 0 {
+	if position.NewsConfidenceScore > 50 {
 		sb.WriteString(fmt.Sprintf("Confidence Score: %.2f\n", position.NewsSummary.ConfidenceScore))
 		sb.WriteString(fmt.Sprintf("Sentiment: %s\n", position.NewsSummary.Sentiment))
 		sb.WriteString(fmt.Sprintf("Impact: %s\n\n", position.NewsSummary.Impact))
