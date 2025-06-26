@@ -17,15 +17,17 @@ import (
 
 // StockAnalyzerStrategy defines the strategy for analyzing stock news.
 type StockAnalyzerStrategy struct {
-	logger      *logger.Logger
-	redisClient *redis.Client
-	stockRepo   repository.StocksRepository
+	logger          *logger.Logger
+	redisClient     *redis.Client
+	stockRepo       repository.StocksRepository
+	tradingViewRepo repository.TradingViewRepository
 }
 
 type StockAnalyzerPayload struct {
-	Interval   string   `json:"interval"`
-	Range      string   `json:"range"`
-	SkipStocks []string `json:"skip_stocks"`
+	SkipStocks       []string `json:"skip_stocks"`
+	UseTradingView   bool     `json:"use_trading_view"`
+	UseStockList     bool     `json:"use_stock_list"`
+	AdditionalStocks []string `json:"additional_stocks"`
 }
 
 type StockAnalyzerResult struct {
@@ -35,8 +37,8 @@ type StockAnalyzerResult struct {
 }
 
 // NewStockAnalyzerStrategy creates a new StockAnalyzerStrategy.
-func NewStockAnalyzerStrategy(log *logger.Logger, redisClient *redis.Client, stockRepo repository.StocksRepository) JobExecutionStrategy {
-	return &StockAnalyzerStrategy{logger: log, redisClient: redisClient, stockRepo: stockRepo}
+func NewStockAnalyzerStrategy(log *logger.Logger, redisClient *redis.Client, stockRepo repository.StocksRepository, tradingViewRepo repository.TradingViewRepository) JobExecutionStrategy {
+	return &StockAnalyzerStrategy{logger: log, redisClient: redisClient, stockRepo: stockRepo, tradingViewRepo: tradingViewRepo}
 }
 
 // GetType returns the job type this strategy handles.
@@ -52,10 +54,34 @@ func (s *StockAnalyzerStrategy) Execute(ctx context.Context, job *entity.Job) (s
 		return "", fmt.Errorf("failed to unmarshal job payload: %w", err)
 	}
 
-	stocks, err := s.stockRepo.GetStocks(ctx)
-	if err != nil {
-		s.logger.Error("Failed to get stocks", logger.ErrorField(err))
-		return "", fmt.Errorf("failed to get stocks: %w", err)
+	var stocks []string
+
+	if payload.UseStockList {
+		stocksList, err := s.stockRepo.GetStocks(ctx)
+		if err != nil {
+			s.logger.Error("Failed to get stocks", logger.ErrorField(err))
+			return "", fmt.Errorf("failed to get stocks: %w", err)
+		}
+
+		for _, stock := range stocksList {
+			stocks = append(stocks, stock.Code)
+		}
+	}
+
+	if len(payload.AdditionalStocks) > 0 {
+		stocks = append(stocks, payload.AdditionalStocks...)
+	}
+
+	if payload.UseTradingView {
+		stocksList, err := s.tradingViewRepo.GetStockBuyList(ctx)
+		if err != nil {
+			s.logger.Error("Failed to get stocks", logger.ErrorField(err))
+			return "", fmt.Errorf("failed to get stocks: %w", err)
+		}
+
+		s.logger.Info("Get stocks from TradingView for analysis", logger.IntField("count", len(stocksList)))
+
+		stocks = append(stocks, stocksList...)
 	}
 
 	skipStocks := make(map[string]bool)
@@ -68,21 +94,21 @@ func (s *StockAnalyzerStrategy) Execute(ctx context.Context, job *entity.Job) (s
 	isSuccess := false
 
 	var results []StockAnalyzerResult
-	for _, stock := range stocks {
-		if skipStocks[stock.Code] {
-			s.logger.Info("Skipping stock", logger.Field("stock_code", stock.Code))
+	for _, code := range stocks {
+		if skipStocks[code] {
+			s.logger.Info("Skipping stock", logger.Field("stock_code", code))
 			continue
 		}
 
 		streamData := &dto.StreamDataStockAnalyzer{
-			StockCode: stock.Code,
+			StockCode: code,
 		}
 
 		streamDataJSON, err := json.Marshal(streamData)
 		if err != nil {
 			s.logger.Error("Failed to marshal stock analyzer payload", logger.ErrorField(err))
 			results = append(results, StockAnalyzerResult{
-				StockCode: stock.Code,
+				StockCode: code,
 				Success:   false,
 				Error:     err.Error(),
 			})
@@ -93,9 +119,9 @@ func (s *StockAnalyzerStrategy) Execute(ctx context.Context, job *entity.Job) (s
 			Stream: common.RedisStreamStockAnalyzer,
 			Values: map[string]interface{}{"payload": streamDataJSON},
 		}).Err(); err != nil {
-			s.logger.Error("Failed to enqueue stock analyzer task", logger.ErrorField(err), logger.Field("stock_code", stock.Code))
+			s.logger.Error("Failed to enqueue stock analyzer task", logger.ErrorField(err), logger.Field("stock_code", code))
 			results = append(results, StockAnalyzerResult{
-				StockCode: stock.Code,
+				StockCode: code,
 				Success:   false,
 				Error:     err.Error(),
 			})
@@ -103,7 +129,7 @@ func (s *StockAnalyzerStrategy) Execute(ctx context.Context, job *entity.Job) (s
 		}
 		isSuccess = true
 		results = append(results, StockAnalyzerResult{
-			StockCode: stock.Code,
+			StockCode: code,
 			Success:   true,
 		})
 	}

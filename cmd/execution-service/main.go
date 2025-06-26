@@ -116,6 +116,7 @@ func runServe(cmd *cobra.Command, args []string) {
 	yahooFinanceRepo, err := repository.NewYahooFinanceRepository(cfg, appLogger)
 	stockSignalRepo := repository.NewStockSignalRepository(db.DB)
 	stockPositionMonitoringRepo := repository.NewStockPositionsMonitoringsRepository(db.DB)
+	tradingViewRepo := repository.NewTradingViewRepository(cfg, appLogger)
 
 	if err != nil {
 		appLogger.Fatal("Failed to initialize Yahoo Finance repository", zap.Error(err))
@@ -167,7 +168,7 @@ func runServe(cmd *cobra.Command, args []string) {
 			stockPositionsRepo,
 			redisClient,
 		),
-		strategy.NewStockAnalyzerStrategy(appLogger, redisClient, stocksRepo),
+		strategy.NewStockAnalyzerStrategy(appLogger, redisClient, stocksRepo, tradingViewRepo),
 		strategy.NewStockNewsSummaryStrategy(
 			db.DB,
 			appLogger,

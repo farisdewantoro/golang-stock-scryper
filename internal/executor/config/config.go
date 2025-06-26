@@ -49,6 +49,14 @@ type Telegram struct {
 	ChatID   int64  `mapstructure:"chat_id"`
 }
 
+// TradingView holds the configuration for the TradingView API.
+type TradingView struct {
+	MaxRequestPerMinute       int     `mapstructure:"max_request_per_minute"`
+	BaseURL                   string  `mapstructure:"base_url"`
+	PayloadGetStockBuyList    string  `mapstructure:"payload_get_stock_buy_list"`
+	BuyListMinTechnicalRating float64 `mapstructure:"buy_list_min_technical_rating"`
+}
+
 // YahooFinance holds the configuration for the Yahoo Finance API.
 type YahooFinance struct {
 	BaseURL             string `mapstructure:"base_url"`
@@ -74,6 +82,7 @@ type Config struct {
 	Gemini       Gemini          `mapstructure:"gemini"`
 	AI           AI              `mapstructure:"ai"`
 	Telegram     Telegram        `mapstructure:"telegram"`
+	TradingView  TradingView     `mapstructure:"tradingview"`
 	YahooFinance YahooFinance    `mapstructure:"yahoo_finance"`
 	OpenAI       OpenAI          `mapstructure:"openai"`
 }

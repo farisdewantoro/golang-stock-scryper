@@ -55,7 +55,7 @@ openai:
 
 
 ai:
-  provider: "openai" # openrouter or gemini or openai
+  provider: "gemini" # openrouter or gemini or openai
 
 telegram:
   bot_token: "XXXXXXXX"
@@ -64,3 +64,9 @@ telegram:
 yahoo_finance:
   base_url: "https://query1.finance.yahoo.com/v8/finance/chart"
   max_request_per_minute: 15
+
+tradingview:
+  max_request_per_minute: 15
+  base_url: "https://scanner.tradingview.com"
+  payload_get_stock_buy_list: "{ \"columns\": [ \"Recommend.All\" ], \"filter\": [ { \"left\": \"market_cap_basic\", \"operation\": \"egreater\", \"right\": 10000000000000 }, { \"left\": \"average_volume_10d_calc\", \"operation\": \"greater\", \"right\": 10000000 }, { \"left\": \"is_primary\", \"operation\": \"equal\", \"right\": true } ], \"ignore_unknown_fields\": false, \"options\": { \"lang\": \"en\" }, \"range\": [ 0, 20 ], \"sort\": { \"sortBy\": \"Recommend.All\", \"sortOrder\": \"desc\" }, \"symbols\": {}, \"markets\": [ \"indonesia\" ] }"
+  buy_list_min_technical_rating: 0.45
