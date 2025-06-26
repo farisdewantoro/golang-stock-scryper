@@ -80,11 +80,11 @@ func (r *tradingViewRepository) GetStockBuyList(ctx context.Context) ([]string, 
 }
 
 func (r *tradingViewRepository) sendRequest(ctx context.Context, method string, url string, jsonStr string) ([]byte, error) {
-	baseUrl := r.cfg.TradingView.BaseURL
 	fields := []zap.Field{
-		zap.String("base_url", baseUrl),
+		zap.String("url", url),
 		zap.Int("max_request_per_minute", r.cfg.TradingView.MaxRequestPerMinute),
 		zap.Int("delay", int(r.requestLimiter.Reserve().Delay())),
+		zap.String("payload", jsonStr),
 	}
 	if !r.requestLimiter.Allow() {
 		r.log.WarnContext(ctx, "Rate limit exceeded for TradingView API", fields...)
