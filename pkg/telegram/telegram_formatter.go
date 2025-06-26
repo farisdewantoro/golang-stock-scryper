@@ -190,13 +190,14 @@ func FormatAnalysisMessage(analysis *dto.IndividualAnalysisResponseMultiTimefram
 	sb.WriteString(fmt.Sprintf("📊 <b>Analysis for %s</b>\n", analysis.Symbol))
 	sb.WriteString(fmt.Sprintf("🎯 Signal: <b>%s</b>\n", analysis.Action))
 	sb.WriteString(fmt.Sprintf("📌 Last Price: %d (%s)\n\n", int(analysis.MarketPrice), analysis.AnalysisDate.Format("01-02 15:04")))
-
+	gain := float64(analysis.TargetPrice-analysis.BuyPrice) / float64(analysis.BuyPrice) * 100
+	loss := float64(analysis.BuyPrice-analysis.CutLoss) / float64(analysis.BuyPrice) * 100
 	// Recommendation
 	if analysis.Action != "HOLD" {
 		sb.WriteString("💡 <b>Recommendation:</b>\n")
 		sb.WriteString(fmt.Sprintf("• 💵 Buy Price: $%d\n", int(analysis.BuyPrice)))
-		sb.WriteString(fmt.Sprintf("• 🎯 Target Price: $%d\n", int(analysis.TargetPrice)))
-		sb.WriteString(fmt.Sprintf("• 🛡 Stop Loss: $%d\n", int(analysis.CutLoss)))
+		sb.WriteString(fmt.Sprintf("• 🎯 Target Price: $%d (%+.2f%%)\n", int(analysis.TargetPrice), gain))
+		sb.WriteString(fmt.Sprintf("• 🛡 Stop Loss: $%d (%+.2f%%)\n", int(analysis.CutLoss), loss))
 		sb.WriteString(fmt.Sprintf("• 🔁 Risk/Reward Ratio: %.2f\n", analysis.RiskRewardRatio))
 	}
 	sb.WriteString(fmt.Sprintf("• 📊 Confidence: %d%%\n", analysis.ConfidenceLevel))
