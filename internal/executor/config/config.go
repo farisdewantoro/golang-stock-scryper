@@ -55,6 +55,7 @@ type TradingView struct {
 	BaseURL                   string  `mapstructure:"base_url"`
 	PayloadGetStockBuyList    string  `mapstructure:"payload_get_stock_buy_list"`
 	BuyListMinTechnicalRating float64 `mapstructure:"buy_list_min_technical_rating"`
+	BuyListMaxStockAnalyze    int     `mapstructure:"buy_list_max_stock_analyze"`
 }
 
 // YahooFinance holds the configuration for the Yahoo Finance API.

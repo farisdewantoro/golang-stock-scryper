@@ -54,6 +54,9 @@ func (r *tradingViewRepository) GetStockBuyList(ctx context.Context) ([]string, 
 
 	var stockCodes []string
 	for _, v := range response.Data {
+		if len(stockCodes) >= r.cfg.TradingView.BuyListMaxStockAnalyze {
+			break
+		}
 		if v.StockCode == "" {
 			continue
 		}
