@@ -337,11 +337,12 @@ Data posisi trading:
   "risk_reward_ratio": 0.3, // HARUS dihitung dari rumus RRR = (Buy Price - SL) / (TP - Buy Price)
   "confidence_level": 80,
   "news_confidence_score": 70,	
-  "key_insights": [
-    "EMA menunjukkan uptrend kuat di semua timeframe.",
-    "Terjadi konvergensi RSI antara 1H dan 4H, menandakan momentum menguat.",
-    "Volume di 1D dan 4H meningkat, memberi dukungan pada breakout potensial.",
-	"Level resistance kuat di 1600 (dari timeframe 1D) sedang diuji; jika breakout terjadi dengan volume, potensi rally ke 1720 terbuka lebar."
+  "technical_summary": [
+	"[Support/Resistance] → Isi level-level penting saat ini",
+	"[EMA] → apakah harga berada di atas/bawah EMA20 & EMA50 dan apa artinya.",
+	"[MACD] → bullish/bearish, crossover, penyempitan",
+	"[RSI] → nilai RSI per timeframe + status (overbought/oversold/netral)",
+	"[Bollinger] → posisi harga terhadap upper/lower band, potensi breakout/koreksi",
   ],
   "technical_score": 85,
   "timeframe_summaries": {

@@ -110,6 +110,9 @@ func (r *geminiAIRepository) executeGeminiAIRequest(ctx context.Context, prompt 
 	}
 
 	jsonPayload, err := json.Marshal(payload)
+
+	r.logger.Debug("Request Gemini API", logger.StringField("jsonPayload", string(jsonPayload)))
+
 	if err != nil {
 		r.logger.Error("Failed to marshal payload", logger.ErrorField(err), logger.StringField("prompt", prompt))
 		return nil, fmt.Errorf("failed to marshal payload: %w", err)
@@ -204,7 +207,6 @@ func (r *geminiAIRepository) AnalyzeStockMultiTimeframe(ctx context.Context, sym
 
 func (r *geminiAIRepository) PositionMonitoringMultiTimeframe(ctx context.Context, request *dto.PositionMonitoringRequest, stockData *dto.StockDataMultiTimeframe, summary *entity.StockNewsSummary) (*dto.PositionMonitoringResponseMultiTimeframe, error) {
 	prompt := BuildPositionMonitoringMultiTimeframePrompt(ctx, request, stockData, summary)
-	r.logger.Debug("Position Monitoring Multi Timeframe Prompt", logger.StringField("prompt", prompt))
 	geminiResp, err := r.executeGeminiAIRequest(ctx, prompt)
 	if err != nil {
 		return nil, err
