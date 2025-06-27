@@ -330,11 +330,11 @@ Data posisi trading:
   "exit_cut_loss": 8950,
   "reasoning": "Tulis penjelasan dan alasan akhir keputusan analisis ini dalam Bahasa Indonesia.",
   "exit_conditions": [
-    "Mencapai target price 9500",
-    "Stop loss di 8950",
-    "Trend reversal signal"
+    "Contoh Exit Condition 1 dalam Bahasa Indonesia.",
+    "Contoh Exit Condition 2 dalam Bahasa Indonesia.",
+    "Contoh Exit Condition 3 dalam Bahasa Indonesia."
   ],
-  "risk_reward_ratio": 3,
+  "risk_reward_ratio": 3.0,
   "confidence_level": 80,
   "news_confidence_score": 70,
   "key_insights": [
