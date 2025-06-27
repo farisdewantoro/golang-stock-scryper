@@ -109,9 +109,11 @@ func (r *geminiAIRepository) executeGeminiAIRequest(ctx context.Context, prompt 
 		Contents: []dto.Content{{Parts: []dto.Part{{Text: prompt}}}},
 	}
 
-	jsonPayload, err := json.Marshal(payload)
+	//debug
+	jsonPrompt, _ := json.Marshal(prompt)
+	r.logger.Debug("Request Gemini API", logger.StringField("prompt", string(jsonPrompt)))
 
-	r.logger.Debug("Request Gemini API", logger.StringField("jsonPayload", string(jsonPayload)))
+	jsonPayload, err := json.Marshal(payload)
 
 	if err != nil {
 		r.logger.Error("Failed to marshal payload", logger.ErrorField(err), logger.StringField("prompt", prompt))

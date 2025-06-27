@@ -155,10 +155,10 @@ type PositionMonitoringResponseMultiTimeframe struct {
 	ConfidenceLevel      int                `json:"confidence_level"`
 	Reasoning            string             `json:"reasoning"`
 	RiskRewardRatio      float64            `json:"risk_reward_ratio"`
-	KeyInsights          []string           `json:"key_insights"`
 	ExitConditions       []string           `json:"exit_conditions"`
 	NewsConfidenceScore  float64            `json:"news_confidence_score"`
 	TechnicalScore       int                `json:"technical_score"`
 	TimeframeSummaries   TimeframeSummaries `json:"timeframe_summaries"`
 	NewsSummary          NewsSummary        `json:"news_summary,omitempty"`
+	TechnicalSummary     []string           `json:"technical_summary"`
 }
