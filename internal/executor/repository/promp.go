@@ -334,13 +334,14 @@ Data posisi trading:
     "Contoh Exit Condition 2 dalam Bahasa Indonesia.",
     "Contoh Exit Condition 3 dalam Bahasa Indonesia."
   ],
-  "risk_reward_ratio": 3.0, // HARUS dihitung dari rumus RRR = (Buy - SL) / (TP - Buy)
+  "risk_reward_ratio": 0.3, // HARUS dihitung dari rumus RRR = (Buy Price - SL) / (TP - Buy Price)
   "confidence_level": 80,
-  "news_confidence_score": 70,
+  "news_confidence_score": 70,	
   "key_insights": [
-	"Berisi 3 insight TEKNIKAL TERPENTING lintas timeframe.",
-	"Fokus pada sinyal dominan atau gabungan indikator (EMA, RSI, MACD, support/resistance).",
-	"Jangan hanya copy ringkasan per timeframe — prioritaskan sinyal kuat, konfirmasi antar timeframe, atau potensi breakout/reversal."
+    "EMA menunjukkan uptrend kuat di semua timeframe.",
+    "Terjadi konvergensi RSI antara 1H dan 4H, menandakan momentum menguat.",
+    "Volume di 1D dan 4H meningkat, memberi dukungan pada breakout potensial.",
+	"Level resistance kuat di 1600 (dari timeframe 1D) sedang diuji; jika breakout terjadi dengan volume, potensi rally ke 1720 terbuka lebar."
   ],
   "technical_score": 85,
   "timeframe_summaries": {

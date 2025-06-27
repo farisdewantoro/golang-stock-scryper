@@ -204,7 +204,7 @@ func (r *geminiAIRepository) AnalyzeStockMultiTimeframe(ctx context.Context, sym
 
 func (r *geminiAIRepository) PositionMonitoringMultiTimeframe(ctx context.Context, request *dto.PositionMonitoringRequest, stockData *dto.StockDataMultiTimeframe, summary *entity.StockNewsSummary) (*dto.PositionMonitoringResponseMultiTimeframe, error) {
 	prompt := BuildPositionMonitoringMultiTimeframePrompt(ctx, request, stockData, summary)
-
+	r.logger.Debug("Position Monitoring Multi Timeframe Prompt", logger.StringField("prompt", prompt))
 	geminiResp, err := r.executeGeminiAIRequest(ctx, prompt)
 	if err != nil {
 		return nil, err
