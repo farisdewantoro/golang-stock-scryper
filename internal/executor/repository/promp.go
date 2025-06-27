@@ -334,15 +334,15 @@ Data posisi trading:
     "Contoh Exit Condition 2 dalam Bahasa Indonesia.",
     "Contoh Exit Condition 3 dalam Bahasa Indonesia."
   ],
-  "risk_reward_ratio": 0.3, // HARUS dihitung dari rumus RRR = (Buy Price - SL) / (TP - Buy Price)
+  "risk_reward_ratio": 0.3,
   "confidence_level": 80,
   "news_confidence_score": 70,	
   "technical_summary": [
-	"[Support/Resistance] → Isi level-level penting saat ini",
-	"[EMA] → apakah harga berada di atas/bawah EMA20 & EMA50 dan apa artinya.",
-	"[MACD] → bullish/bearish, crossover, penyempitan",
-	"[RSI] → nilai RSI per timeframe + status (overbought/oversold/netral)",
-	"[Bollinger] → posisi harga terhadap upper/lower band, potensi breakout/koreksi",
+	"[Support/Resistance] Pada timeframe 1D, support kuat berada di 1500 dan resistance utama di 1720. Di 4H, support minor terbentuk di 1550 dengan resistance di 1640. Sedangkan di 1H, support intraday berada di 1580 dan resistance cepat di 1600.",
+	"[EMA] Harga berada di atas EMA20 dan EMA50 pada 1D dan 4H, mengindikasikan tren naik masih bertahan.",
+	"[MACD] MACD menunjukkan sinyal bullish di 1D, mulai menyempit di 4H, dan sedikit melemah di 1H.",
+	"[RSI] RSI saat ini: 1D = 72 (overbought), 4H = 65 (cukup kuat), 1H = 55 (netral).",
+	"[Bollinger] Harga menyentuh upper band di 1D dan 4H, mengindikasikan potensi koreksi jangka pendek."
   ],
   "technical_score": 85,
   "timeframe_summaries": {
