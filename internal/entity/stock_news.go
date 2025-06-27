@@ -16,12 +16,14 @@ type StockNews struct {
 	Summary        string         `json:"summary"`
 	HashIdentifier string         `gorm:"unique;not null" json:"hash_identifier"`
 	Source         string         `json:"source"`
+	SourceName     string         `json:"source_name"`
 	GoogleRSSLink  string         `json:"google_rss_link"`
 	ImpactScore    float64        `json:"impact_score"`
 	KeyIssue       pq.StringArray `gorm:"key_issue;type:text[]" json:"key_issue"`
 	CreatedAt      time.Time      `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt      time.Time      `gorm:"autoUpdateTime" json:"updated_at"`
 	StockMentions  []StockMention `gorm:"foreignKey:StockNewsID" json:"stock_mentions"`
+	KeywordRSS     string         `json:"keyword_rss"`
 
 	// Fields populated by custom query for ranking
 	StockCode       string  `gorm:"-" json:"stock_code,omitempty"`

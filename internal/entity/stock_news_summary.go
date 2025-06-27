@@ -19,6 +19,7 @@ type StockNewsSummary struct {
 	ShortSummary           string         `gorm:"type:text" json:"short_summary"`
 	SummaryStart           time.Time      `json:"summary_start"`
 	SummaryEnd             time.Time      `json:"summary_end"`
+	HashIdentifier         string         `gorm:"type:text;not null" json:"hash_identifier"`
 	CreatedAt              time.Time      `gorm:"autoCreateTime" json:"created_at"`
 }
 

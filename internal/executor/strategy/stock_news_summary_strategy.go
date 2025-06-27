@@ -2,8 +2,11 @@ package strategy
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"sync"
 
 	"golang-stock-scryper/internal/entity"
@@ -55,9 +58,10 @@ func (s *StockNewsSummaryStrategy) GetType() entity.JobType {
 
 // StockNewsSummaryPayload defines the payload for the stock news summary job.
 type StockNewsSummaryPayload struct {
-	MaxNews            int      `json:"max_news"`
-	MaxNewsAgeInDays   int      `json:"max_news_age_in_days"`
-	PriorityDomainList []string `json:"priority_domain_list"`
+	MinToSummarizeNews int     `json:"min_to_summarize_news"`
+	MinConfidenceScore float64 `json:"min_confidence_score"`
+	MaxNewsAgeInDays   int     `json:"max_news_age_in_days"`
+	MaxNewsEachStock   int     `json:"max_news_each_stock"`
 }
 
 // Execute runs the stock news summary job.
@@ -67,29 +71,26 @@ func (s *StockNewsSummaryStrategy) Execute(ctx context.Context, job *entity.Job)
 		return "", fmt.Errorf("failed to unmarshal job payload: %w", err)
 	}
 
-	// var results []scrapeResult
 	var (
 		wg      sync.WaitGroup
 		mu      sync.Mutex
 		results []dto.ExecutorSummaryResult
-		// telegramResults []dto.NewsSummaryTelegramResult
 	)
 
-	stocks, err := s.stockRepo.GetStocks(ctx)
+	stocks, err := s.stockNewsRepo.GetStocksToSummarize(ctx, payload.MaxNewsAgeInDays, payload.MinToSummarizeNews, payload.MinConfidenceScore)
 	if err != nil {
 		s.logger.Error("Failed to get stocks", logger.ErrorField(err))
 		return "", fmt.Errorf("failed to get stocks: %w", err)
 	}
 
-	for _, stock := range stocks {
+	for _, code := range stocks {
 		wg.Add(1)
-		code := stock.Code
 		utils.GoSafe(func() {
 			defer wg.Done()
 			s.logger.Info("Executing stock news summary job", logger.StringField("stock_code", code))
 
 			// 1. Fetch ranked news from the database
-			rankedNews, err := s.stockNewsRepo.FindRankedNews(ctx, code, payload.MaxNews, payload.MaxNewsAgeInDays, payload.PriorityDomainList)
+			rankedNews, err := s.stockNewsRepo.FindRankedNews(ctx, code, payload.MaxNewsEachStock, payload.MaxNewsAgeInDays, []string{})
 			if err != nil {
 				s.logger.Error("Failed to fetch ranked news", logger.ErrorField(err), logger.StringField("stock_code", code))
 				mu.Lock()
@@ -109,6 +110,47 @@ func (s *StockNewsSummaryStrategy) Execute(ctx context.Context, job *entity.Job)
 					StockCode: code,
 					IsSuccess: false,
 					Error:     "no news found for summary generation",
+				})
+				mu.Unlock()
+				return
+			}
+
+			var combineStr strings.Builder
+			for _, item := range rankedNews {
+				if combineStr.Len() > 0 {
+					combineStr.WriteString("|")
+				}
+				if item.PublishedAt == nil {
+					continue
+				}
+				combineStr.WriteString(item.Link + "|" + item.StockCode)
+			}
+
+			hashIdentifier := sha256.Sum256([]byte(combineStr.String()))
+			hashString := hex.EncodeToString(hashIdentifier[:])
+
+			summaryExists, err := s.stockNewsSummaryRepo.Get(ctx, &dto.GetStockSummaryParam{
+				HashIdentifier: hashString,
+			})
+			if err != nil {
+				s.logger.Error("Failed to get stock news summary", logger.ErrorField(err))
+				mu.Lock()
+				results = append(results, dto.ExecutorSummaryResult{
+					StockCode: code,
+					IsSuccess: false,
+					Error:     err.Error(),
+				})
+				mu.Unlock()
+				return
+			}
+
+			if len(summaryExists) > 0 {
+				s.logger.Info("Stock news summary already exists", logger.StringField("stock_code", code))
+				mu.Lock()
+				results = append(results, dto.ExecutorSummaryResult{
+					StockCode: code,
+					IsSuccess: false,
+					Error:     "stock news summary already exists",
 				})
 				mu.Unlock()
 				return
@@ -140,6 +182,7 @@ func (s *StockNewsSummaryStrategy) Execute(ctx context.Context, job *entity.Job)
 				Reasoning:              summaryResult.Reasoning,
 				ShortSummary:           summaryResult.ShortSummary,
 				CreatedAt:              utils.TimeNowWIB(),
+				HashIdentifier:         hashString,
 			}
 
 			// set summary start and end
@@ -180,26 +223,10 @@ func (s *StockNewsSummaryStrategy) Execute(ctx context.Context, job *entity.Job)
 				StockCode: code,
 				IsSuccess: true,
 			})
-			// telegramResults = append(telegramResults, dto.NewsSummaryTelegramResult{
-			// 	StockCode:       code,
-			// 	ShortSummary:    summaryResult.ShortSummary,
-			// 	Action:          summaryResult.SuggestedAction,
-			// 	Sentiment:       summaryResult.SummarySentiment,
-			// 	ConfidenceScore: summaryResult.SummaryConfidenceScore,
-			// })
 			mu.Unlock()
 		})
 	}
 	wg.Wait()
-
-	// messages := telegram.FormatNewsSummariesForTelegram(telegramResults)
-
-	// for _, message := range messages {
-	// 	if err := s.telegramNotifier.SendMessage(message); err != nil {
-	// 		s.logger.Error("Failed to send Telegram notification", logger.ErrorField(err))
-	// 	}
-	// 	time.Sleep(100 * time.Millisecond) // supaya tidak lebih dari 20 msg/detik
-	// }
 
 	resultJSON, err := json.Marshal(results)
 	if err != nil {

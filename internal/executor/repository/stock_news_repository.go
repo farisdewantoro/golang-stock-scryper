@@ -17,6 +17,7 @@ type StockNewsRepository interface {
 	Create(ctx context.Context, stockNews *entity.StockNews) error
 	CreateIgnoreConflict(ctx context.Context, stockNews *entity.StockNews) error
 	FindRankedNews(ctx context.Context, stockCode string, maxNews int, maxNewsAgeInDays int, priorityDomains []string) ([]entity.StockNews, error)
+	GetStocksToSummarize(ctx context.Context, maxNewsAgeInDays int, minimumNews int, minimumConfidenceScore float64) ([]string, error)
 }
 
 // NewStockNewsRepository creates a new instance of StockNewsRepository.
@@ -141,4 +142,21 @@ func (r *stockNewsRepository) CreateIgnoreConflict(ctx context.Context, stockNew
 		return nil
 	})
 
+}
+
+func (r *stockNewsRepository) GetStocksToSummarize(ctx context.Context, maxNewsAgeInDays int, minimumNews int, minimumConfidenceScore float64) ([]string, error) {
+	var stocks []string
+	err := r.db.WithContext(ctx).Raw(fmt.Sprintf(`
+		SELECT sm.stock_code
+		FROM stock_mentions sm
+		JOIN stock_news sn ON sm.stock_news_id = sn.id
+		WHERE sn.published_at >= NOW() - INTERVAL '%d days'
+		GROUP BY sm.stock_code
+		HAVING COUNT(*) >= %d 
+		   AND MAX(sm.confidence_score) > %f
+	`, maxNewsAgeInDays, minimumNews, minimumConfidenceScore)).Scan(&stocks).Error
+	if err != nil {
+		return nil, err
+	}
+	return stocks, nil
 }

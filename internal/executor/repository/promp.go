@@ -35,7 +35,7 @@ Berdasarkan semua informasi di atas, berikan analisis dengan format JSON:
   "stock_code": "%s",
   "summary_sentiment": "positive | negative | neutral",
   "summary_impact": "bullish | bearish | sideways",
-  "summary_confidence_score": 0.0 - 1.0,
+  "summary_confidence_score": {0.0 - 1.0},
   "key_issues": ["{dalam bahasa indonesia}"],
   "suggested_action": "buy | hold | sell",
   "reasoning": "{dalam bahasa indonesia}",
@@ -64,16 +64,16 @@ Catatan penting:
 
 Tolong analisa dan berikan output dalam format JSON dengan struktur berikut:
 {
-  "summary": "ANTM akan membagikan dividen terbesar dalam sejarah perusahaan. Langkah ini diambil karena laba bersih perusahaan naik signifikan sepanjang 2024...",
-  "key_issue": ["dividen", "laporan keuangan", "analisa"],
-  "impact_score": 0.88,
+  "summary": "<string - wajib diisi dalam bahasa indonesia>",
+  "key_issue": ["<string - wajib diisi 1 dalam bahasa indonesia>", "<string - wajib diisi 2 dalam bahasa indonesia>", "<string - wajib diisi 3 dalam bahasa indonesia>"],
+  "impact_score": <float 0.0-1.0>,
   "stock_mentions":[
     {
-      "stock_code": "ANTM | TIDAK_RELEVAN" ,
-      "sentiment": "positive",
-      "impact": "bullish",
-      "confidence_score": 0.88,
-	  "reason": "Penjelasan logis dan spesifik kenapa berita ini berdampak ke saham ini."
+      "stock_code": "STRING_SYMBOL | TIDAK_RELEVAN" ,
+      "sentiment": "positive | neutral | negative",
+      "impact": "bullish | bearish | sideways",
+      "confidence_score": <float 0.0-1.0>,
+	  "reason": "<string - wajib diisi dalam bahasa indonesia>"
     }
   ]
 }
@@ -103,7 +103,10 @@ func BuildIndividualAnalysisMultiTimeframePrompt(
 	ohlcvJSON1H, _ := json.Marshal(stockData.OHLCV1H)
 
 	// Ringkasan sentimen dari berita
-	newsSummaryText := ""
+	newsSummaryText := `
+### INPUT BERITA TERKINI
+Tidak ada berita, jangan gunakan berita untuk analisa ini
+`
 	if summary != nil {
 		newsSummaryText = fmt.Sprintf(`
 ### INPUT BERITA TERKINI
@@ -213,7 +216,10 @@ func BuildPositionMonitoringMultiTimeframePrompt(ctx context.Context,
 	ohlcvJSON1H, _ := json.Marshal(stockData.OHLCV1H)
 
 	// Ringkasan sentimen dari berita
-	newsSummaryText := ""
+	newsSummaryText := `
+### INPUT BERITA TERKINI
+Tidak ada berita, jangan gunakan berita untuk analisa ini	
+`
 	if summary != nil {
 		newsSummaryText = fmt.Sprintf(`
 ### INPUT BERITA TERKINI		

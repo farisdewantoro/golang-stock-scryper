@@ -3,9 +3,10 @@ package strategy
 import (
 	"bytes"
 	"context"
-	"crypto/md5"
+	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"encoding/xml"
 	"fmt"
 	"io"
 	"sort"
@@ -24,7 +25,6 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/mauidude/go-readability"
-	"github.com/mmcdole/gofeed"
 	"github.com/patrickmn/go-cache"
 	"gorm.io/gorm"
 )
@@ -71,13 +71,16 @@ type scrapeResult struct {
 }
 
 type StockNewsScraperPayload struct {
-	AdditionalStockCodes []string `json:"additional_stock_codes"`
-	DelayInterval        int      `json:"delay_interval"`
-	MaxNews              int      `json:"max_news"`
-	MaxNewsAgeInDays     int      `json:"max_news_age_in_days"`
-	BlackListedDomains   []string `json:"blacklisted_domains"`
-	MaxConcurrent        int      `json:"max_concurrent"`
-	AdditionalKeywords   []string `json:"additional_keywords"`
+	AdditionalStockCodes []string       `json:"additional_stock_codes"`
+	DelayInterval        int            `json:"delay_interval"`
+	MaxNews              int            `json:"max_news"`
+	MaxNewsAgeInDays     int            `json:"max_news_age_in_days"`
+	BlackListedDomains   []string       `json:"blacklisted_domains"`
+	MaxConcurrent        int            `json:"max_concurrent"`
+	AdditionalKeywords   []string       `json:"additional_keywords"`
+	UseStockList         bool           `json:"use_stock_list"`
+	DefaultQueryParam    string         `json:"default_query_param"`
+	SourcePriority       map[string]int `json:"source_priority"`
 }
 
 func (s *StockNewsScraperStrategy) Execute(ctx context.Context, job *entity.Job) (string, error) {
@@ -91,14 +94,11 @@ func (s *StockNewsScraperStrategy) Execute(ctx context.Context, job *entity.Job)
 	var mu sync.Mutex
 
 	defaultQueryParam := "hl=id&gl=ID&ceid=ID:id"
+	if payload.DefaultQueryParam != "" {
+		defaultQueryParam = payload.DefaultQueryParam
+	}
 
 	queriesRSS := []string{}
-
-	stocks, err := s.stockRepo.GetStocks(ctx)
-	if err != nil {
-		s.logger.Error("Failed to get stocks", logger.ErrorField(err))
-		return "", fmt.Errorf("failed to get stocks: %w", err)
-	}
 
 	if len(payload.AdditionalKeywords) > 0 {
 		for _, keyword := range payload.AdditionalKeywords {
@@ -110,8 +110,15 @@ func (s *StockNewsScraperStrategy) Execute(ctx context.Context, job *entity.Job)
 		}
 	}
 
-	for _, stock := range stocks {
-		queriesRSS = append(queriesRSS, fmt.Sprintf("/search?q=saham+%s&%s", stock.Code, defaultQueryParam))
+	if payload.UseStockList {
+		stocks, err := s.stockRepo.GetStocks(ctx)
+		if err != nil {
+			s.logger.Error("Failed to get stocks", logger.ErrorField(err))
+			return "", fmt.Errorf("failed to get stocks: %w", err)
+		}
+		for _, stock := range stocks {
+			queriesRSS = append(queriesRSS, fmt.Sprintf("/search?q=saham+%s&%s", stock.Code, defaultQueryParam))
+		}
 	}
 
 	if len(payload.AdditionalStockCodes) > 0 {
@@ -138,9 +145,7 @@ func (s *StockNewsScraperStrategy) Execute(ctx context.Context, job *entity.Job)
 				Errors:      []string{},
 			}
 			url := fmt.Sprintf("https://news.google.com/rss%s", queryRSS)
-			s.logger.Info("Processing RSS feed", logger.StringField("url", url))
-			fp := gofeed.NewParser()
-			feed, err := fp.ParseURLWithContext(url, ctx)
+			rss, err := s.parseRSSFeed(ctx, url)
 			if err != nil {
 				s.logger.Error("Failed to parse RSS feed", logger.ErrorField(err), logger.StringField("query_rss", queryRSS))
 				scrapeResultData.Status = FAILED
@@ -150,16 +155,10 @@ func (s *StockNewsScraperStrategy) Execute(ctx context.Context, job *entity.Job)
 				mu.Unlock()
 				return
 			}
-			// Sort items by published date descending
-			sort.Slice(feed.Items, func(i, j int) bool {
-				if feed.Items[i].PublishedParsed == nil || feed.Items[j].PublishedParsed == nil {
-					return false
-				}
-				return feed.Items[i].PublishedParsed.After(*feed.Items[j].PublishedParsed)
-			})
+			s.logger.Info("Processing RSS feed", logger.StringField("url", url))
 
 			// Filter out existing news items
-			filteredItems, err := s.filterExistingNewsItems(ctx, feed.Items, payload.MaxNewsAgeInDays)
+			filteredItems, err := s.filterExistingNewsItems(ctx, rss.Channel.Items, payload.MaxNewsAgeInDays)
 			if err != nil {
 				s.logger.Error("Failed to filter existing news items", logger.ErrorField(err), logger.StringField("query_rss", queryRSS))
 				scrapeResultData.Status = FAILED
@@ -169,8 +168,11 @@ func (s *StockNewsScraperStrategy) Execute(ctx context.Context, job *entity.Job)
 				mu.Unlock()
 			}
 
+			// Sort items by published date descending
+			s.sortItems(filteredItems, payload.SourcePriority)
+
 			s.logger.Info("Filtered news items",
-				logger.IntField("original_count", len(feed.Items)),
+				logger.IntField("original_count", len(rss.Channel.Items)),
 				logger.IntField("filtered_count", len(filteredItems)),
 				logger.StringField("query_rss", queryRSS),
 			)
@@ -186,14 +188,14 @@ func (s *StockNewsScraperStrategy) Execute(ctx context.Context, job *entity.Job)
 					logger.StringField("title", item.Title),
 					logger.StringField("query_rss", queryRSS),
 					logger.IntField("count_success", countSuccess),
-					logger.IntField("count_total", len(feed.Items)),
+					logger.IntField("count_total", len(rss.Channel.Items)),
 					logger.IntField("max_news", payload.MaxNews),
 				)
 				if countSuccess >= payload.MaxNews {
 					break
 				}
 
-				status, news, err := s.processNewsItem(ctx, item, queryRSS, payload)
+				status, news, err := s.processNewsItem(ctx, &item, queryRSS, payload)
 				if err != nil {
 					scrapeResultData.FailedLinks = append(scrapeResultData.FailedLinks, news.Link)
 					scrapeResultData.Errors = append(scrapeResultData.Errors, err.Error())
@@ -234,18 +236,18 @@ func (s *StockNewsScraperStrategy) Execute(ctx context.Context, job *entity.Job)
 }
 
 // filterExistingNewsItems filters out feed items that already exist in the database based on their hash identifiers
-func (s *StockNewsScraperStrategy) filterExistingNewsItems(ctx context.Context, items []*gofeed.Item, maxNewsAgeInDays int) ([]*gofeed.Item, error) {
+func (s *StockNewsScraperStrategy) filterExistingNewsItems(ctx context.Context, items []dto.RSSItem, maxNewsAgeInDays int) ([]dto.RSSItem, error) {
 	if len(items) == 0 {
 		return items, nil
 	}
 
 	// Create a map to store the hash identifiers of all items
-	hashMap := make(map[string]*gofeed.Item)
+	hashMap := make(map[string]dto.RSSItem)
 	var hashStrings []string
 
 	// Generate hash for each item and store in map
 	for _, item := range items {
-		hashIdentifier := md5.Sum([]byte(item.Link + "|" + item.Published))
+		hashIdentifier := sha256.Sum256([]byte(item.Link + "|" + item.PubDate.String()))
 		hashString := hex.EncodeToString(hashIdentifier[:])
 		hashMap[hashString] = item
 		hashStrings = append(hashStrings, hashString)
@@ -270,18 +272,22 @@ func (s *StockNewsScraperStrategy) filterExistingNewsItems(ctx context.Context, 
 	now := utils.TimeNowWIB()
 
 	// Filter out existing items
-	var filteredItems []*gofeed.Item
+	var filteredItems []dto.RSSItem
 	for hash, item := range hashMap {
 		if existingHashes[hash] {
 			s.logger.Info("News already exists", logger.StringField("rss", item.Link), logger.StringField("hash", hash))
 			continue
 		}
 
-		if item.PublishedParsed == nil {
+		if item.PubDate == nil {
 			s.logger.Info("News published date is nil", logger.StringField("rss", item.Link))
 			continue
 		}
-		if item.PublishedParsed.In(utils.GetWibTimeLocation()).Before(now.Add(-time.Duration(maxNewsAgeInDays*24) * time.Hour)) {
+		if item.PubDate.Time().In(utils.GetWibTimeLocation()).Before(now.Add(-time.Duration(maxNewsAgeInDays*24) * time.Hour)) {
+			s.logger.Debug("News is too old",
+				logger.StringField("title", item.Title),
+				logger.StringField("published_date", item.PubDate.Time().Format("2006-01-02 15:04:05")),
+				logger.IntField("max_news_age_in_days", maxNewsAgeInDays))
 			continue
 		}
 
@@ -291,7 +297,7 @@ func (s *StockNewsScraperStrategy) filterExistingNewsItems(ctx context.Context, 
 	return filteredItems, nil
 }
 
-func (s *StockNewsScraperStrategy) processNewsItem(ctx context.Context, item *gofeed.Item, queryRSS string, payload StockNewsScraperPayload) (string, entity.StockNews, error) {
+func (s *StockNewsScraperStrategy) processNewsItem(ctx context.Context, item *dto.RSSItem, queryRSS string, payload StockNewsScraperPayload) (string, entity.StockNews, error) {
 	decodeResult := s.decoder.DecodeGoogleNewsURL(item.Link, 0)
 	if !decodeResult.Status {
 		s.logger.Error("Failed to decode google rss link", logger.StringField("message", decodeResult.Message))
@@ -300,22 +306,24 @@ func (s *StockNewsScraperStrategy) processNewsItem(ctx context.Context, item *go
 	decodedURL := decodeResult.DecodedURL
 
 	publishedDateStr := "N/A"
-	if item.PublishedParsed == nil {
+	if item.PubDate == nil {
 		s.logger.Error("Failed to parse published date", logger.StringField("link", decodedURL))
 		return FAILED, entity.StockNews{}, fmt.Errorf("failed to parse published date")
 	}
 
-	publishedDateStr = item.PublishedParsed.Format(time.RFC3339)
+	publishedDateStr = item.PubDate.Time().Format(time.RFC3339)
 
-	hashIdentifier := md5.Sum([]byte(item.Link + "|" + item.Published))
+	hashIdentifier := sha256.Sum256([]byte(item.Link + "|" + publishedDateStr))
 	hashString := hex.EncodeToString(hashIdentifier[:])
 
 	news := entity.StockNews{
 		Title:          utils.CleanToValidUTF8(item.Title),
 		Link:           decodedURL,
-		PublishedAt:    item.PublishedParsed,
+		PublishedAt:    utils.ToPointer(item.PubDate.Time()),
 		HashIdentifier: hashString,
 		GoogleRSSLink:  item.Link,
+		KeywordRSS:     queryRSS,
+		SourceName:     item.Source.Name,
 	}
 
 	parsedURL, err := url.Parse(decodedURL)
@@ -421,4 +429,79 @@ func (s *StockNewsScraperStrategy) generateContent(ctx context.Context, url stri
 	content = strings.ReplaceAll(content, "\r", "")
 	content = strings.ReplaceAll(content, "\f", "")
 	return utils.SafeText(content), nil
+}
+
+func (s *StockNewsScraperStrategy) parseRSSFeed(ctx context.Context, url string) (*dto.RSS, error) {
+	var rss dto.RSS
+
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	if err != nil {
+		s.logger.Error("Failed to create request", logger.ErrorField(err), logger.StringField("url", url))
+		return nil, fmt.Errorf("failed to create request for RSS feed: %w", err)
+	}
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
+	req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
+	req.Header.Set("Accept-Language", "en-US,en;q=0.5")
+	req.Header.Set("Connection", "keep-alive")
+	req.Header.Set("Upgrade-Insecure-Requests", "1")
+
+	resp, err := s.client.Do(req)
+	if err != nil {
+		s.logger.Error("Failed to fetch parse RSS feed", logger.ErrorField(err), logger.StringField("url", url))
+		return nil, fmt.Errorf("failed to fetch parse RSS feed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		s.logger.Error("Failed to fetch parse RSS feed with non-200 status", logger.IntField("status", resp.StatusCode), logger.StringField("url", url))
+		return nil, fmt.Errorf("failed to fetch parse RSS feed, status code: %d", resp.StatusCode)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		s.logger.Error("Failed to read response body", logger.ErrorField(err), logger.StringField("url", url))
+		return nil, fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	err = xml.Unmarshal(body, &rss)
+	if err != nil {
+		s.logger.Error("Failed to unmarshal RSS feed", logger.ErrorField(err), logger.StringField("url", url))
+		return nil, fmt.Errorf("failed to unmarshal RSS feed: %w", err)
+	}
+
+	return &rss, nil
+}
+
+func (s *StockNewsScraperStrategy) sortItems(items []dto.RSSItem, sourcePriority map[string]int) {
+	sort.SliceStable(items, func(i, j int) bool {
+
+		si := "Unknown"
+		if items[i].Source != nil {
+			si = items[i].Source.URL
+		}
+		sj := "Unknown"
+		if items[j].Source != nil {
+			sj = items[j].Source.URL
+		}
+
+		pi, ok := sourcePriority[si]
+		if !ok {
+			pi = 999
+		}
+		pj, ok := sourcePriority[sj]
+		if !ok {
+			pj = 999
+		}
+
+		// Step 1: Prioritas source lebih tinggi
+		if pi != pj {
+			return pi < pj
+		}
+
+		// Step 2: Kalau prioritas sama, bandingkan tanggal (terbaru dulu)
+		ti := items[i].PubDate.Time()
+		tj := items[j].PubDate.Time()
+
+		return ti.After(tj)
+	})
 }

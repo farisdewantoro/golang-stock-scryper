@@ -59,3 +59,7 @@ type GetStockPositionsParam struct {
 	MonitorPosition *bool    `json:"monitor_position"`
 	IsActive        *bool    `json:"is_active"`
 }
+
+type GetStockSummaryParam struct {
+	HashIdentifier string `json:"hash_identifier"`
+}
