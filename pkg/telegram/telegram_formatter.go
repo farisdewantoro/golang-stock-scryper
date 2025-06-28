@@ -189,7 +189,9 @@ func FormatAnalysisMessage(analysis *dto.IndividualAnalysisResponseMultiTimefram
 
 	sb.WriteString(fmt.Sprintf("📊 <b>Analysis for %s</b>\n", analysis.Symbol))
 	sb.WriteString(fmt.Sprintf("🎯 Signal: <b>%s</b>\n", analysis.Action))
-	sb.WriteString(fmt.Sprintf("📌 Last Price: %d (%s)\n\n", int(analysis.MarketPrice), analysis.AnalysisDate.Format("01-02 15:04")))
+	sb.WriteString(fmt.Sprintf("📌 Last Price: %d (%s)\n", int(analysis.MarketPrice), analysis.AnalysisDate.Format("01-02 15:04")))
+	sb.WriteString(fmt.Sprintf("📶 Confidence: %d%%\n", analysis.ConfidenceLevel))
+	sb.WriteString(fmt.Sprintf("🔢 Technical Score: %d\n", analysis.TechnicalScore))
 	gain := float64(analysis.TargetPrice-analysis.BuyPrice) / float64(analysis.BuyPrice) * 100
 	loss := float64(analysis.BuyPrice-analysis.CutLoss) / float64(analysis.BuyPrice) * 100
 	// Recommendation
@@ -200,7 +202,7 @@ func FormatAnalysisMessage(analysis *dto.IndividualAnalysisResponseMultiTimefram
 		sb.WriteString(fmt.Sprintf("• 🛡 Stop Loss: $%d (%+.2f%%)\n", int(analysis.CutLoss), loss))
 		sb.WriteString(fmt.Sprintf("• 🔁 Risk/Reward Ratio: %.2f\n", analysis.RiskRewardRatio))
 	}
-	sb.WriteString(fmt.Sprintf("• 📊 Confidence: %d%%\n", analysis.ConfidenceLevel))
+
 	// Reasoning
 	sb.WriteString(fmt.Sprintf("\n🧠 <b>Reasoning:</b>\n %s\n\n", analysis.Reasoning))
 
@@ -243,9 +245,9 @@ func FormatPositionMonitoringMessage(position *dto.PositionMonitoringResponseMul
 	iconAction := "❔"
 	if position.Action == "HOLD" {
 		iconAction = "🟡"
-	} else if position.Action == "SELL" {
+	} else if position.Action == "CUTLOSS" {
 		iconAction = "🔴"
-	} else if position.Action == "BUY" {
+	} else if position.Action == "SELL" {
 		iconAction = "🟢"
 	}
 

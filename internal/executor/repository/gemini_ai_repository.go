@@ -196,6 +196,10 @@ func (r *geminiAIRepository) AnalyzeStockMultiTimeframe(ctx context.Context, sym
 	result.MarketPrice = stockData.MarketPrice
 	result.AnalysisDate = utils.TimeNowWIB()
 	result.Symbol = symbol
+	if result.BuyPrice != 0 && result.TargetPrice != 0 && result.CutLoss != 0 {
+		result.RiskRewardRatio = (result.TargetPrice - result.BuyPrice) / (result.BuyPrice - result.CutLoss)
+	}
+
 	if summary != nil {
 		result.NewsSummary = dto.NewsSummary{
 			ConfidenceScore: summary.SummaryConfidenceScore,

@@ -138,10 +138,6 @@ Berikut adalah ringkasan berita untuk saham %s selama periode %s hingga %s:
 ### PERAN ANDA
 Anda adalah analis saham berpengalaman dalam swing trading pasar saham Indonesia. Tugas Anda adalah menganalisis apakah saham %s layak untuk dibeli saat ini berdasarkan **multi-timeframe analysis** (1D, 4H, 1H) dan **ringkasan berita pasar terbaru**.
 
-- **1D**: jangka menengah (sekitar 1-3 bulan terakhir)
-- **4H**: jangka pendek (beberapa hari terakhir)
-- **1H**: jangka sangat pendek (intraday/harian)
-
 ### TUJUAN
 Evaluasi sinyal beli (BUY) berdasarkan trend dominan, volume, momentum, indikator teknikal (EMA, MACD, RSI, Bollinger Bands), serta sentimen berita. Hanya berikan sinyal **BUY** jika semua syarat teknikal dan berita terpenuhi.
 
@@ -175,6 +171,25 @@ Evaluasi sinyal beli (BUY) berdasarkan trend dominan, volume, momentum, indikato
 ### HARGA PASAR SAAT INI
 %.2f
 
+### INSTRUKSI PENGISIAN REASONING
+- Jelaskan secara ringkas namun jelas alasan utama di balik keputusan akhir (BUY atau HOLD), berdasarkan indikator teknikal utama: EMA, MACD, RSI, Bollinger Bands, Support/Resistance, dan volume.
+- Sebutkan kondisi dari indikator-indikator tersebut yang paling mendukung atau bertentangan dengan keputusan.
+- Pastikan reasoning bersifat logis, seimbang, dan tidak mengabaikan sinyal teknikal yang bertentangan signifikan.
+- Jika tersedia, sertakan pertimbangan dari berita: apakah sentimen mendukung keputusan teknikal atau justru bertentangan. Cantumkan dampaknya terhadap harga dan skor confidence dari berita.
+
+### INSTRUKSI TEKNIS UNTUK PENGISIAN SKOR
+- Field "confidence_level" (0-100) menunjukkan tingkat keyakinan atas keputusan akhir:
+  - > 80 → Semua data teknikal dan berita (jika ada) mendukung keputusan dengan kuat
+  - 60-80 → Mayoritas sinyal mendukung, namun ada potensi risiko kecil
+  - 40-60 → Beberapa sinyal bertentangan, keyakinan keputusan masih cukup rendah
+  - < 40 → Banyak konflik antar sinyal atau sinyal tidak jelas
+
+- Field "technical_score" (0-100) menunjukkan kekuatan sinyal teknikal murni (tanpa mempertimbangkan berita):
+  - > 85 → Semua indikator teknikal utama (EMA, MACD, RSI, Volume, Bollinger Bands) mendukung potensi kenaikan kuat
+  - 60-85 → Mayoritas indikator mendukung potensi naik
+  - 40-60 → Sinyal teknikal lemah atau tidak meyakinkan
+  - < 40 → Banyak indikator menunjukkan potensi penurunan / tren melemah
+
 
 ### FORMAT OUTPUT WAJIB:
 Hanya berikan **output dalam format JSON valid**, tanpa penjelasan tambahan.
@@ -182,23 +197,16 @@ Hanya berikan **output dalam format JSON valid**, tanpa penjelasan tambahan.
 Contoh JSON yang di harapkan:
 {
   "action": "BUY|HOLD",
-  "buy_price": 1550,
-  "target_price": 1720,
-  "cut_loss": 1420,
-  "risk_reward_ratio": 3.0,
-  "confidence_level": 80,
-  "reasoning": "Tulis penjelasan akhir keputusan analisis teknikal dalam Bahasa Indonesia.",
-  "news_confidence_score": 70,
-  "key_insights": [
-    "Contoh insight teknikal 1 dalam Bahasa Indonesia.",
-    "Contoh insight teknikal 2 dalam Bahasa Indonesia.",
-    "Contoh insight teknikal 3 dalam Bahasa Indonesia."
-  ],
-  "technical_score": 85,
+  "buy_price": <float64 DEFAULT 0>,
+  "target_price": <float64 DEFAULT 0>,
+  "cut_loss": <float64 DEFAULT 0>,
+  "confidence_level": <int 0-100>,
+  "reasoning": "<Tulis penjelasan akhir keputusan analisis teknikal dalam Bahasa Indonesia>",
+  "technical_score": <int 0-100>,
   "timeframe_summaries": {
- 	"time_frame_1d": "Ringkasan teknikal jangka menengah dalam Bahasa Indonesia.",
-    "time_frame_4h": "Ringkasan teknikal jangka pendek dalam Bahasa Indonesia.",
-    "time_frame_1h": "Ringkasan teknikal jangka sangat pendek dalam Bahasa Indonesia."
+ 	"time_frame_1d":"<Ringkasan teknikal analisis yang menjelaskan Support/Resistance, EMA, MACD, RSI, Bollinger Bands dan informasi penting lainnya>",
+    "time_frame_4h": "<Ringkasan teknikal analisis yang menjelaskan Support/Resistance, EMA, MACD, RSI, Bollinger Bands dan informasi penting lainnya>",
+    "time_frame_1h": "<Ringkasan teknikal analisis yang menjelaskan Support/Resistance, EMA, MACD, RSI, Bollinger Bands dan informasi penting lainnya>",
   }
 }
 `, symbol, newsSummaryText, string(ohlcvJSON1D), string(ohlcvJSON4H), string(ohlcvJSON1H), stockData.MarketPrice)
@@ -257,10 +265,10 @@ Gunakan ringkasan ini untuk mempertimbangkan konteks eksternal (berita) dalam an
 
 	prompt := fmt.Sprintf(`
 ### PERAN ANDA
-Anda adalah analis teknikal swing trading. Evaluasi posisi saham yang sudah dibeli untuk memberikan rekomendasi: HOLD, SELL, atau CUT_LOSS berdasarkan analisis teknikal dari multi-timeframe (1D, 4H, 1H), serta ringkasan berita.
+Anda adalah analis teknikal swing trading. Evaluasi posisi saham yang sudah dibeli untuk memberikan rekomendasi: HOLD, SELL, atau CUTLOSS berdasarkan analisis teknikal dari multi-timeframe (1D, 4H, 1H), serta ringkasan berita.
 
 ### TUJUAN UTAMA
-Menentukan keputusan posisi saham saat ini: HOLD, SELL, atau CUT_LOSS, berdasarkan analisis teknikal multi-timeframe, risk-reward, dan sentimen berita (jika tersedia).
+Menentukan keputusan posisi saham saat ini: HOLD, SELL, atau CUTLOSS, berdasarkan analisis teknikal multi-timeframe, risk-reward, dan sentimen berita (jika tersedia).
 
 ### KRITERIA PENILAIAN
 Analisa berdasarkan:
@@ -333,9 +341,11 @@ Data posisi trading:
 
 
 ### INSTRUKSI PENGISIAN REASONING
-- Jelaskan alasan utama di balik keputusan akhir (HOLD, SELL, atau CUT_LOSS).
+- Jelaskan secara ringkas namun jelas alasan utama di balik keputusan akhir (SELL, HOLD atau CUTLOSS), berdasarkan indikator teknikal utama: EMA, MACD, RSI, Bollinger Bands, Support/Resistance, dan volume.
 - Jika terjadi perubahan dari target awal (misalnya exit_target_price ≠ target_price, atau exit_cut_loss_price ≠ stop_loss), jelaskan alasan perubahan tersebut secara eksplisit berdasarkan sinyal teknikal atau waktu tersisa.
-- Sertakan pertimbangan dari berita jika ada.
+- Sebutkan kondisi dari indikator-indikator tersebut yang paling mendukung atau bertentangan dengan keputusan.
+- Pastikan reasoning bersifat logis, seimbang, dan tidak mengabaikan sinyal teknikal yang bertentangan signifikan.
+- Jika tersedia, sertakan pertimbangan dari berita: apakah sentimen mendukung keputusan teknikal atau justru bertentangan. Cantumkan dampaknya terhadap harga dan skor confidence dari berita.
 
 ### INSTRUKSI TEKNIS UNTUK PENGISIAN SKOR
 - Field "confidence_level" (0-100) menunjukkan tingkat keyakinan atas keputusan akhir:
@@ -354,15 +364,15 @@ Data posisi trading:
 ### FORMAT OUTPUT WAJIB (DALAM JSON)
 {
   "action": "HOLD|SELL|CUTLOSS",
-  "exit_target_price": 9500,
-  "exit_cut_loss_price": 8950,
-  "reasoning": "Tulis penjelasan dan alasan akhir keputusan analisis ini dalam Bahasa Indonesia.",
-  "confidence_level": 0-100,
-  "technical_score": 0-100,
+  "exit_target_price": <float64 DEFAULT 0>,
+  "exit_cut_loss_price": <float64 DEFAULT 0>,
+  "reasoning": "<Tulis penjelasan dan alasan akhir keputusan analisis ini dalam Bahasa Indonesia>",
+  "confidence_level": <int 0-100>,
+  "technical_score": <int 0-100>,
   "timeframe_summaries": {
-    "time_frame_1d": "Ringkasan teknikal analisis yang menjelaskan Support/Resistance, EMA, MACD, RSI, Bollinger Bands dan informasi penting lainnya (tidak usah mention timeframe karena sudah di field)",
-    "time_frame_4h": "Ringkasan teknikal analisis yang menjelaskan Support/Resistance, EMA, MACD, RSI, Bollinger Bands dan informasi penting lainnya (tidak usah mention timeframe karena sudah di field)",
-    "time_frame_1h": "Ringkasan teknikal analisis yang menjelaskan Support/Resistance, EMA, MACD, RSI, Bollinger Bands dan informasi penting lainnya (tidak usah mention timeframe karena sudah di field)"
+    "time_frame_1d": "<Ringkasan teknikal analisis yang menjelaskan Support/Resistance, EMA, MACD, RSI, Bollinger Bands dan informasi penting lainnya>",
+    "time_frame_4h": "<Ringkasan teknikal analisis yang menjelaskan Support/Resistance, EMA, MACD, RSI, Bollinger Bands dan informasi penting lainnya>",
+    "time_frame_1h": "<Ringkasan teknikal analisis yang menjelaskan Support/Resistance, EMA, MACD, RSI, Bollinger Bands dan informasi penting lainnya>"
   }
 }
 
