@@ -198,6 +198,7 @@ func (r *geminiAIRepository) AnalyzeStockMultiTimeframe(ctx context.Context, sym
 	result.Symbol = symbol
 	if result.BuyPrice != 0 && result.TargetPrice != 0 && result.CutLoss != 0 {
 		result.RiskRewardRatio = (result.TargetPrice - result.BuyPrice) / (result.BuyPrice - result.CutLoss)
+
 	}
 
 	if summary != nil {
@@ -233,7 +234,6 @@ func (r *geminiAIRepository) PositionMonitoringMultiTimeframe(ctx context.Contex
 	result.Symbol = request.Symbol
 	result.RiskRewardRatio = (request.TargetPrice - request.BuyPrice) / (request.BuyPrice - request.StopLoss)
 	result.ExitRiskRewardRatio = (result.ExitTargetPrice - request.BuyPrice) / (request.BuyPrice - result.ExitCutLossPrice)
-
 	if summary != nil {
 		result.NewsSummary = dto.NewsSummary{
 			ConfidenceScore: summary.SummaryConfidenceScore,

@@ -102,10 +102,10 @@ func BuildIndividualAnalysisMultiTimeframePrompt(
 	ohlcvJSON4H, _ := json.Marshal(stockData.OHLCV4H)
 	ohlcvJSON1H, _ := json.Marshal(stockData.OHLCV1H)
 
-	// Ringkasan sentimen dari berita
+	// Ringkasan sentimen dari berita (opsional)
 	newsSummaryText := `
 ### INPUT BERITA TERKINI
-Tidak ada berita, jangan gunakan berita untuk analisa ini
+Tidak ada berita, abaikan aspek berita dalam analisis ini.
 `
 	if summary != nil {
 		newsSummaryText = fmt.Sprintf(`
@@ -119,7 +119,7 @@ Berikut adalah ringkasan berita untuk saham %s selama periode %s hingga %s:
 - Saran tindakan: %s
 - Alasan: %s
 
-**Gunakan informasi ini sebagai konteks eksternal saat menganalisis data teknikal.**
+**Gunakan informasi ini sebagai konteks eksternal saat menganalisis data teknikal, hanya jika relevan.**
 `,
 			summary.StockCode,
 			summary.SummaryStart.Format("2006-01-02"),
@@ -136,24 +136,30 @@ Berikut adalah ringkasan berita untuk saham %s selama periode %s hingga %s:
 
 	prompt := fmt.Sprintf(`
 ### PERAN ANDA
-Anda adalah analis saham berpengalaman dalam swing trading pasar saham Indonesia. Tugas Anda adalah menganalisis apakah saham %s layak untuk dibeli saat ini berdasarkan **multi-timeframe analysis** (1D, 4H, 1H) dan **ringkasan berita pasar terbaru**.
+Anda adalah analis saham berpengalaman dalam swing trading pasar saham Indonesia. Tugas Anda adalah menganalisis apakah saham %s layak untuk dibeli saat ini berdasarkan **multi-timeframe analysis** (1D, 4H, 1H) dan **ringkasan berita pasar terbaru** (jika tersedia).
 
 ### TUJUAN
-Evaluasi sinyal beli (BUY) berdasarkan trend dominan, volume, momentum, indikator teknikal (EMA, MACD, RSI, Bollinger Bands), serta sentimen berita. Hanya berikan sinyal **BUY** jika semua syarat teknikal dan berita terpenuhi.
+Evaluasi sinyal beli (BUY) berdasarkan trend dominan, volume, momentum, indikator teknikal (EMA, MACD, RSI, Bollinger Bands), serta sentimen berita (jika tersedia).
+
+Fokuskan analisis pada strategi **swing trading jangka pendek** dengan **estimasi holding period 1 hingga 7 hari kerja**. Oleh karena itu, prediksi harga dan keputusan beli harus mempertimbangkan potensi pergerakan harga dalam rentang waktu tersebut.
+
+Hanya berikan sinyal **BUY** jika semua syarat teknikal dan, jika ada, berita juga mendukung.
 
 ### KRITERIA KEPUTUSAN:
 - **BUY** jika:
   - 1D dan 4H menunjukkan trend BULLISH
   - EMA, MACD, dan RSI mendukung (tidak bertentangan)
   - 1H minimal netral atau rebound
-  - Risk/Reward ≥ 3.0
-  - Berita mendukung (impact bullish/neutral dan confidence ≥ 0.7)
+  - Risk-reward ≥ 1:3
+  - Jika tersedia, berita harus mendukung (impact bullish/neutral dan confidence ≥ 0.7)
 - **HOLD** jika:
   - Sinyal teknikal tidak konklusif (sideways, mixed)
-  - Berita tidak cukup kuat mendukung
   - Trend utama belum jelas
-- Semua angka dan penilaian harus **konsisten secara logis dan matematis**. Jangan berikan sinyal BUY jika tidak memenuhi semua syarat di atas.
-- Gunakan berita hanya jika relevan dan selaras atau berlawanan kuat dengan sinyal teknikal.
+  - Jika tersedia, berita tidak cukup kuat mendukung atau bertentangan
+- Jika tidak ada berita, abaikan aspek berita dan fokus pada analisis teknikal.
+- Semua angka dan penilaian harus **konsisten secara logis dan matematis**.
+- Jangan berikan sinyal BUY jika tidak memenuhi semua syarat di atas.
+- Jika ada konflik antar timeframe, prioritaskan analisis 1D dan 4H. Timeframe 1H hanya digunakan untuk validasi atau entry timing.
 
 %s
 
@@ -176,6 +182,9 @@ Evaluasi sinyal beli (BUY) berdasarkan trend dominan, volume, momentum, indikato
 - Sebutkan kondisi dari indikator-indikator tersebut yang paling mendukung atau bertentangan dengan keputusan.
 - Pastikan reasoning bersifat logis, seimbang, dan tidak mengabaikan sinyal teknikal yang bertentangan signifikan.
 - Jika tersedia, sertakan pertimbangan dari berita: apakah sentimen mendukung keputusan teknikal atau justru bertentangan. Cantumkan dampaknya terhadap harga dan skor confidence dari berita.
+- Jika tidak ada berita, jangan menyertakan analisis eksternal dan fokus pada indikator teknikal.
+- Sertakan estimasi berapa lama saham sebaiknya di-hold (dalam hari kerja) untuk mencapai target price berdasarkan tren dan momentum saat ini (1-7 hari kerja).
+- Penjelasan reasoning harus mendukung nilai "estimated_holding_days" yang diberikan. Sertakan alasan teknikal seperti kekuatan momentum, jarak ke resistance, atau prediksi waktu breakout yang memperkuat estimasi durasi tersebut.
 
 ### INSTRUKSI TEKNIS UNTUK PENGISIAN SKOR
 - Field "confidence_level" (0-100) menunjukkan tingkat keyakinan atas keputusan akhir:
@@ -190,11 +199,23 @@ Evaluasi sinyal beli (BUY) berdasarkan trend dominan, volume, momentum, indikato
   - 40-60 → Sinyal teknikal lemah atau tidak meyakinkan
   - < 40 → Banyak indikator menunjukkan potensi penurunan / tren melemah
 
+### INSTRUKSI TEKNIS UNTUK PENGISIAN estimated_holding_days
+- Field "estimated_holding_days" menunjukkan estimasi berapa lama (dalam hari kerja) saham diperkirakan akan mencapai "target_price" setelah sinyal "BUY" diberikan.
+- Nilai harus berupa bilangan bulat antara **1 hingga 7**, sesuai dengan karakteristik swing trading jangka pendek.
+- Gunakan analisis momentum harga, kekuatan trend, posisi terhadap resistance, dan volume untuk menentukan estimasi ini.
+
+**Interpretasi berdasarkan "action":**
+- Jika "action" == "BUY":
+  - Field ini **wajib diisi**.
+  - Berikan estimasi realistis kapan target_price kemungkinan tercapai.
+- Jika "action" == "HOLD":
+  - Field ini **boleh diisi** atau dikosongkan.
+  - Jika diisi, berarti estimasi kapan saham bisa layak dipertimbangkan untuk dibeli.
 
 ### FORMAT OUTPUT WAJIB:
 Hanya berikan **output dalam format JSON valid**, tanpa penjelasan tambahan.
 
-Contoh JSON yang di harapkan:
+Contoh JSON yang diharapkan:
 {
   "action": "BUY|HOLD",
   "buy_price": <float64 DEFAULT 0>,
@@ -203,13 +224,15 @@ Contoh JSON yang di harapkan:
   "confidence_level": <int 0-100>,
   "reasoning": "<Tulis penjelasan akhir keputusan analisis teknikal dalam Bahasa Indonesia>",
   "technical_score": <int 0-100>,
+  "estimated_holding_days": <int 1-7>,
   "timeframe_summaries": {
- 	"time_frame_1d":"<Ringkasan teknikal analisis yang menjelaskan Support/Resistance, EMA, MACD, RSI, Bollinger Bands dan informasi penting lainnya>",
+    "time_frame_1d": "<Ringkasan teknikal analisis yang menjelaskan Support/Resistance, EMA, MACD, RSI, Bollinger Bands dan informasi penting lainnya>",
     "time_frame_4h": "<Ringkasan teknikal analisis yang menjelaskan Support/Resistance, EMA, MACD, RSI, Bollinger Bands dan informasi penting lainnya>",
-    "time_frame_1h": "<Ringkasan teknikal analisis yang menjelaskan Support/Resistance, EMA, MACD, RSI, Bollinger Bands dan informasi penting lainnya>",
+    "time_frame_1h": "<Ringkasan teknikal analisis yang menjelaskan Support/Resistance, EMA, MACD, RSI, Bollinger Bands dan informasi penting lainnya>"
   }
 }
 `, symbol, newsSummaryText, string(ohlcvJSON1D), string(ohlcvJSON4H), string(ohlcvJSON1H), stockData.MarketPrice)
+
 	return prompt
 }
 

@@ -201,6 +201,9 @@ func FormatAnalysisMessage(analysis *dto.IndividualAnalysisResponseMultiTimefram
 		sb.WriteString(fmt.Sprintf("• 🎯 Target Price: $%d (%+.2f%%)\n", int(analysis.TargetPrice), gain))
 		sb.WriteString(fmt.Sprintf("• 🛡 Stop Loss: $%d (%+.2f%%)\n", int(analysis.CutLoss), loss))
 		sb.WriteString(fmt.Sprintf("• 🔁 Risk/Reward Ratio: %.2f\n", analysis.RiskRewardRatio))
+		sb.WriteString(fmt.Sprintf("• <i>⏳ Estimasi Waktu Profit: %d hari kerja</i>\n", analysis.EstimatedHoldingDays))
+	} else if analysis.Action == "HOLD" && analysis.EstimatedHoldingDays > 0 {
+		sb.WriteString(fmt.Sprintf("<i>🔍 Perkiraan Waktu Tunggu: %d hari kerja</i>\n", analysis.EstimatedHoldingDays))
 	}
 
 	// Reasoning

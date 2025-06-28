@@ -49,19 +49,20 @@ type IndividualAnalysisResponse struct {
 }
 
 type IndividualAnalysisResponseMultiTimeframe struct {
-	MarketPrice        float64            `json:"market_price"`
-	Symbol             string             `json:"symbol"`
-	AnalysisDate       time.Time          `json:"analysis_date"`
-	Action             string             `json:"action"`
-	BuyPrice           float64            `json:"buy_price,omitempty"`
-	TargetPrice        float64            `json:"target_price,omitempty"`
-	CutLoss            float64            `json:"cut_loss,omitempty"`
-	ConfidenceLevel    int                `json:"confidence_level,omitempty"`
-	Reasoning          string             `json:"reasoning"`
-	RiskRewardRatio    float64            `json:"risk_reward_ratio,omitempty"`
-	TechnicalScore     int                `json:"technical_score,omitempty"`
-	TimeframeSummaries TimeframeSummaries `json:"timeframe_summaries"`
-	NewsSummary        NewsSummary        `json:"news_summary,omitempty"`
+	MarketPrice          float64            `json:"market_price"`
+	Symbol               string             `json:"symbol"`
+	AnalysisDate         time.Time          `json:"analysis_date"`
+	Action               string             `json:"action"`
+	BuyPrice             float64            `json:"buy_price,omitempty"`
+	TargetPrice          float64            `json:"target_price,omitempty"`
+	CutLoss              float64            `json:"cut_loss,omitempty"`
+	ConfidenceLevel      int                `json:"confidence_level,omitempty"`
+	Reasoning            string             `json:"reasoning"`
+	RiskRewardRatio      float64            `json:"risk_reward_ratio,omitempty"`
+	TechnicalScore       int                `json:"technical_score,omitempty"`
+	TimeframeSummaries   TimeframeSummaries `json:"timeframe_summaries"`
+	NewsSummary          NewsSummary        `json:"news_summary,omitempty"`
+	EstimatedHoldingDays int                `json:"estimated_holding_days"`
 }
 
 type TimeframeSummaries struct {
