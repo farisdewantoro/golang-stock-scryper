@@ -339,15 +339,16 @@ Data posisi trading:
 
 ### INSTRUKSI TEKNIS UNTUK PENGISIAN SKOR
 - Field "confidence_level" (0-100) menunjukkan tingkat keyakinan atas keputusan akhir:
-  - > 80 → Semua sinyal dan berita mendukung
-  - 60-80 → Mayoritas sinyal mendukung, ada potensi risiko
-  - 40-60 → Sinyal campuran
-  - < 40 → Banyak sinyal bertentangan atau lemah
+  - > 80 → Semua data teknikal dan berita (jika ada) mendukung keputusan dengan kuat
+  - 60-80 → Mayoritas sinyal mendukung, namun ada potensi risiko kecil
+  - 40-60 → Beberapa sinyal bertentangan, keyakinan keputusan masih cukup rendah
+  - < 40 → Banyak konflik antar sinyal atau sinyal tidak jelas
 
 - Field "technical_score" (0-100) menunjukkan kekuatan sinyal teknikal murni (tanpa mempertimbangkan berita):
-  - > 85 → EMA, MACD, RSI, Volume, BB semuanya mendukung
-  - 60-85 → Campuran, mayoritas mendukung
-  - < 60 → Banyak sinyal lemah atau bertentangan
+  - > 85 → Semua indikator teknikal utama (EMA, MACD, RSI, Volume, Bollinger Bands) mendukung potensi kenaikan kuat
+  - 60-85 → Mayoritas indikator mendukung potensi naik
+  - 40-60 → Sinyal teknikal lemah atau tidak meyakinkan
+  - < 40 → Banyak indikator menunjukkan potensi penurunan / tren melemah
 
 
 ### FORMAT OUTPUT WAJIB (DALAM JSON)
