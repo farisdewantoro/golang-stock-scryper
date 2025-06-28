@@ -64,7 +64,7 @@ func RemainingDays(maxHoldingDays int, buyTime time.Time) int {
 	expiredTime := buyTime.AddDate(0, 0, maxHoldingDays)
 
 	// Hitung selisih hari dari sekarang
-	now := time.Now()
+	now := GetNowWithOnlyHour()
 	remaining := int(math.Ceil(expiredTime.Sub(now).Hours() / 24))
 
 	return remaining

@@ -252,28 +252,25 @@ func FormatPositionMonitoringMessage(position *dto.PositionMonitoringResponseMul
 	sb.WriteString(fmt.Sprintf("📊 <b>Position Update: %s</b>\n", position.Symbol))
 	sb.WriteString(fmt.Sprintf("💰 Buy: $%d\n", int(position.BuyPrice)))
 	sb.WriteString(fmt.Sprintf("📌 Last Price: $%d %s\n", int(position.MarketPrice), unrealizedPnLPercentageStr))
-	sb.WriteString(fmt.Sprintf("🎯 TP: $%d | SL: $%d\n", int(position.TargetPrice), int(position.CutLoss)))
+	sb.WriteString(fmt.Sprintf("🎯 TP: $%d | SL: $%d | RR: %.2f\n", int(position.TargetPrice), int(position.CutLoss), position.RiskRewardRatio))
 	sb.WriteString(fmt.Sprintf("📈 Age: %d days | Remaining: %d days\n\n", ageDays, daysRemaining))
 
 	// Recommendation
+	gain := float64(position.ExitTargetPrice-position.BuyPrice) / float64(position.BuyPrice) * 100
+	loss := float64(position.BuyPrice-position.ExitCutLossPrice) / float64(position.BuyPrice) * 100
 	sb.WriteString("💡 <b>Recommendation:</b>\n")
-	sb.WriteString(fmt.Sprintf("• %s Action: %s\n", iconAction, position.Action))
-	sb.WriteString(fmt.Sprintf("• 🎯 Target Price: $%d\n", int(position.ExitTargetPrice)))
-	sb.WriteString(fmt.Sprintf("• 🛡 Stop Loss: $%d\n", int(position.ExitCutLoss)))
-	sb.WriteString(fmt.Sprintf("• 🔁 Risk/Reward Ratio: %.2f\n", position.RiskRewardRatio))
-	sb.WriteString(fmt.Sprintf("• 📊 Confidence: %d%%\n\n", position.ConfidenceLevel))
+	sb.WriteString(fmt.Sprintf(" • Action: %s %s\n", iconAction, position.Action))
+	sb.WriteString(fmt.Sprintf(" • Target Price: $%d (%+.2f%%)\n", int(position.ExitTargetPrice), gain))
+	sb.WriteString(fmt.Sprintf(" • Stop Loss: $%d (%+.2f%%)\n", int(position.ExitCutLossPrice), loss))
+	sb.WriteString(fmt.Sprintf(" • Risk/Reward Ratio: %.2f\n", position.ExitRiskRewardRatio))
+	sb.WriteString(fmt.Sprintf(" • Confidence: %d%%\n", position.ConfidenceLevel))
+	sb.WriteString(fmt.Sprintf(" • Technical Score: %d\n\n", position.TechnicalScore))
 	// Reasoning
 	sb.WriteString(fmt.Sprintf("🧠 <b>Reasoning:</b>\n %s\n\n", position.Reasoning))
-	if len(position.ExitConditions) > 0 {
-		sb.WriteString("💡 <b>Exit Conditions:</b>\n")
-		for _, condition := range position.ExitConditions {
-			sb.WriteString(fmt.Sprintf("• %s\n", condition))
-		}
-	}
 
 	// Technical Analysis
 	// Technical Analysis Summary
-	sb.WriteString("\n<b>📉 Ringkasan Per Timeframe:</b>\n")
+	sb.WriteString("\n<b>📉 Ringkasan Per-Timeframe:</b>\n")
 	sb.WriteString(fmt.Sprintf("• 1D: %s\n", position.TimeframeSummaries.TimeFrame1D))
 	sb.WriteString(fmt.Sprintf("• 4H: %s\n", position.TimeframeSummaries.TimeFrame4H))
 	sb.WriteString(fmt.Sprintf("• 1H: %s\n", position.TimeframeSummaries.TimeFrame1H))

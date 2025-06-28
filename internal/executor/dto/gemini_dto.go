@@ -151,14 +151,12 @@ type PositionMonitoringResponseMultiTimeframe struct {
 	TargetPrice          float64            `json:"target_price,omitempty"`
 	CutLoss              float64            `json:"cut_loss,omitempty"`
 	ExitTargetPrice      float64            `json:"exit_target_price,omitempty"`
-	ExitCutLoss          float64            `json:"exit_cut_loss,omitempty"`
+	ExitCutLossPrice     float64            `json:"exit_cut_loss_price,omitempty"`
 	ConfidenceLevel      int                `json:"confidence_level"`
 	Reasoning            string             `json:"reasoning"`
 	RiskRewardRatio      float64            `json:"risk_reward_ratio"`
-	ExitConditions       []string           `json:"exit_conditions"`
-	NewsConfidenceScore  float64            `json:"news_confidence_score"`
+	ExitRiskRewardRatio  float64            `json:"exit_risk_reward_ratio"`
 	TechnicalScore       int                `json:"technical_score"`
 	TimeframeSummaries   TimeframeSummaries `json:"timeframe_summaries"`
 	NewsSummary          NewsSummary        `json:"news_summary,omitempty"`
-	TechnicalSummary     []string           `json:"technical_summary"`
 }

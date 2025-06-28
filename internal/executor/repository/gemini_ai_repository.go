@@ -227,6 +227,8 @@ func (r *geminiAIRepository) PositionMonitoringMultiTimeframe(ctx context.Contex
 	result.TargetPrice = request.TargetPrice
 	result.CutLoss = request.StopLoss
 	result.Symbol = request.Symbol
+	result.RiskRewardRatio = (request.TargetPrice - request.BuyPrice) / (request.BuyPrice - request.StopLoss)
+	result.ExitRiskRewardRatio = (result.ExitTargetPrice - request.BuyPrice) / (request.BuyPrice - result.ExitCutLossPrice)
 
 	if summary != nil {
 		result.NewsSummary = dto.NewsSummary{

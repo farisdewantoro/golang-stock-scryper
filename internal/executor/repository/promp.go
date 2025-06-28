@@ -259,15 +259,14 @@ Gunakan ringkasan ini untuk mempertimbangkan konteks eksternal (berita) dalam an
 ### PERAN ANDA
 Anda adalah analis teknikal swing trading. Evaluasi posisi saham yang sudah dibeli untuk memberikan rekomendasi: HOLD, SELL, atau CUT_LOSS berdasarkan analisis teknikal dari multi-timeframe (1D, 4H, 1H), serta ringkasan berita.
 
-- **1D**: jangka menengah (sekitar 1-3 bulan terakhir)
-- **4H**: jangka pendek (beberapa hari terakhir)
-- **1H**: jangka sangat pendek (intraday/harian)
+### TUJUAN UTAMA
+Menentukan keputusan posisi saham saat ini: HOLD, SELL, atau CUT_LOSS, berdasarkan analisis teknikal multi-timeframe, risk-reward, dan sentimen berita (jika tersedia).
 
-### TUJUAN
-Tujuanmu adalah mengevaluasi apakah posisi saham ini sebaiknya dipertahankan (HOLD), dijual (SELL), atau dihentikan (CUT_LOSS), berdasarkan kombinasi analisa teknikal (seperti trend, EMA, RSI, MACD, Bollinger Bands, volume), harga pasar saat ini, waktu tersisa dalam periode holding, serta ringkasan berita terbaru jika tersedia. 
-Berita hanya boleh digunakan jika memiliki tingkat kepercayaan (confidence) yang tinggi dan memberikan dampak yang mendukung atau memperlemah sinyal teknikal utama. Abaikan berita yang tidak relevan atau bertentangan dengan analisa teknikal dominan.
-Target Price dan Stop Loss sudah tersedia dan harus digunakan sebagai acuan awal. Namun, jika hasil analisis teknikal dan konteks berita menunjukkan bahwa target atau stop loss tersebut tidak lagi realistis atau terlalu agresif/defensif, kamu boleh merekomendasikan perubahan dengan alasan yang jelas dan terukur.
-
+### KRITERIA PENILAIAN
+Analisa berdasarkan:
+- Trend dan indikator teknikal utama (EMA, RSI, MACD, Bollinger Bands, Volume).
+- Risk-Reward Ratio relatif terhadap waktu tersisa (Max Holding).
+- Relevansi dan kekuatan sentimen berita (opsional, jika confidence tinggi).
 %s
 
 ### INPUT DATA SAHAM SAYA
@@ -318,40 +317,56 @@ Data posisi trading:
   - Trend berubah jadi BEARISH
   - Risk tinggi, reward rendah, dan waktu hampir habis
   - Berita buruk meningkatkan risiko signifikan (confidence tinggi, dampak bearish)
-
 - Semua angka dan penilaian harus **konsisten secara logis dan matematis**. 
 - Gunakan berita hanya jika relevan dan selaras atau berlawanan kuat dengan sinyal teknikal.
+
+
+### INSTRUKSI PENGISIAN EXIT PRICE
+- Gunakan "exit_target_price" untuk menyesuaikan target take profit secara dinamis:
+  - Jika masih realistis, gunakan nilai "target_price" sebagai "exit_target_price".
+  - Jika potensi kenaikan lebih besar dari "target_price", naikkan "exit_target_price" secara wajar berdasarkan sinyal teknikal terbaru.
+  - Jika harga mulai melemah atau waktu tidak cukup, pertimbangkan menurunkan "exit_target_price" agar tetap merealisasikan profit.
+
+- Gunakan "exit_cut_loss_price" untuk menentukan batas risiko terbaru:
+  - Jika support teknikal berubah, sesuaikan level cut loss.
+  - Jika ada sinyal distribusi atau pelemahan ekstrem, pertimbangkan menaikkan "exit_cut_loss_price" agar risiko tetap terkendali.
+
+
+### INSTRUKSI PENGISIAN REASONING
+- Jelaskan alasan utama di balik keputusan akhir (HOLD, SELL, atau CUT_LOSS).
+- Jika terjadi perubahan dari target awal (misalnya exit_target_price ≠ target_price, atau exit_cut_loss_price ≠ stop_loss), jelaskan alasan perubahan tersebut secara eksplisit berdasarkan sinyal teknikal atau waktu tersisa.
+- Sertakan pertimbangan dari berita jika ada.
+
+### INSTRUKSI TEKNIS UNTUK PENGISIAN SKOR
+- Field "confidence_level" (0-100) menunjukkan tingkat keyakinan atas keputusan akhir:
+  - > 80 → Semua sinyal dan berita mendukung
+  - 60-80 → Mayoritas sinyal mendukung, ada potensi risiko
+  - 40-60 → Sinyal campuran
+  - < 40 → Banyak sinyal bertentangan atau lemah
+
+- Field "technical_score" (0-100) menunjukkan kekuatan sinyal teknikal murni (tanpa mempertimbangkan berita):
+  - > 85 → EMA, MACD, RSI, Volume, BB semuanya mendukung
+  - 60-85 → Campuran, mayoritas mendukung
+  - < 60 → Banyak sinyal lemah atau bertentangan
 
 
 ### FORMAT OUTPUT WAJIB (DALAM JSON)
 {
   "action": "HOLD|SELL|CUTLOSS",
   "exit_target_price": 9500,
-  "exit_cut_loss": 8950,
+  "exit_cut_loss_price": 8950,
   "reasoning": "Tulis penjelasan dan alasan akhir keputusan analisis ini dalam Bahasa Indonesia.",
-  "exit_conditions": [
-    "Contoh Exit Condition 1 dalam Bahasa Indonesia.",
-    "Contoh Exit Condition 2 dalam Bahasa Indonesia.",
-    "Contoh Exit Condition 3 dalam Bahasa Indonesia."
-  ],
-  "risk_reward_ratio": 0.3,
-  "confidence_level": 80,
-  "news_confidence_score": 70,	
-  "technical_summary": [
-	"[Support/Resistance] Pada timeframe 1D, support kuat berada di 1500 dan resistance utama di 1720. Di 4H, support minor terbentuk di 1550 dengan resistance di 1640. Sedangkan di 1H, support intraday berada di 1580 dan resistance cepat di 1600.",
-	"[EMA] Harga berada di atas EMA20 dan EMA50 pada 1D dan 4H, mengindikasikan tren naik masih bertahan.",
-	"[MACD] MACD menunjukkan sinyal bullish di 1D, mulai menyempit di 4H, dan sedikit melemah di 1H.",
-	"[RSI] RSI saat ini: 1D = 72 (overbought), 4H = 65 (cukup kuat), 1H = 55 (netral).",
-	"[Bollinger] Harga menyentuh upper band di 1D dan 4H, mengindikasikan potensi koreksi jangka pendek."
-  ],
-  "technical_score": 85,
+  "confidence_level": 0-100,
+  "technical_score": 0-100,
   "timeframe_summaries": {
-    "time_frame_1d": "Ringkasan teknikal jangka menengah dalam Bahasa Indonesia.",
-    "time_frame_4h": "Ringkasan teknikal jangka pendek dalam Bahasa Indonesia.",
-    "time_frame_1h": "Ringkasan teknikal jangka sangat pendek dalam Bahasa Indonesia."
+    "time_frame_1d": "Ringkasan teknikal analisis yang menjelaskan Support/Resistance, EMA, MACD, RSI, Bollinger Bands dan informasi penting lainnya (tidak usah mention timeframe karena sudah di field)",
+    "time_frame_4h": "Ringkasan teknikal analisis yang menjelaskan Support/Resistance, EMA, MACD, RSI, Bollinger Bands dan informasi penting lainnya (tidak usah mention timeframe karena sudah di field)",
+    "time_frame_1h": "Ringkasan teknikal analisis yang menjelaskan Support/Resistance, EMA, MACD, RSI, Bollinger Bands dan informasi penting lainnya (tidak usah mention timeframe karena sudah di field)"
   }
 }
-  
+
+Ringkasan teknikal analisis yang menjelaskan Support/Resistance, EMA, MACD, RSI, Bollinger Bands dan juga pendapat lainnya yang penting untuk diinformasikan.
+
 ### CATATAN
 - Pastikan semua keputusan didasarkan pada kombinasi sinyal teknikal dan konteks berita, bukan berdasarkan perasaan atau prediksi jangka panjang. Jika indikator saling bertentangan, prioritaskan risk-reward dan waktu tersisa sebagai penentu akhir.
 `, newsSummaryText, request.Symbol, request.BuyPrice, request.BuyTime.Format("2006-01-02T15:04:05-07:00"),
