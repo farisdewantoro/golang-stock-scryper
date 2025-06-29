@@ -233,7 +233,10 @@ func (r *geminiAIRepository) PositionMonitoringMultiTimeframe(ctx context.Contex
 	result.CutLoss = request.StopLoss
 	result.Symbol = request.Symbol
 	result.RiskRewardRatio = (request.TargetPrice - request.BuyPrice) / (request.BuyPrice - request.StopLoss)
-	result.ExitRiskRewardRatio = (result.ExitTargetPrice - request.BuyPrice) / (request.BuyPrice - result.ExitCutLossPrice)
+
+	if result.ExitTargetPrice != 0 && result.ExitCutLossPrice != 0 {
+		result.ExitRiskRewardRatio = (result.ExitTargetPrice - request.BuyPrice) / (request.BuyPrice - result.ExitCutLossPrice)
+	}
 	if summary != nil {
 		result.NewsSummary = dto.NewsSummary{
 			ConfidenceScore: summary.SummaryConfidenceScore,
@@ -257,23 +260,6 @@ func (r *geminiAIRepository) parseIndividualAnalysisResponse(resp *dto.GeminiAPI
 	if err := json.Unmarshal([]byte(rawJSON), &result); err != nil {
 		r.logger.Error("Failed to unmarshal individual analysis response from Gemini response", logger.ErrorField(err), logger.StringField("response", rawJSON))
 		return nil, fmt.Errorf("failed to unmarshal individual analysis response from Gemini response: %w", err)
-	}
-
-	return &result, nil
-}
-
-func (r *geminiAIRepository) parsePositionMonitoringResponse(resp *dto.GeminiAPIResponse) (*dto.PositionMonitoringResponse, error) {
-	if len(resp.Candidates) == 0 || len(resp.Candidates[0].Content.Parts) == 0 {
-		return nil, fmt.Errorf("no content found in Gemini response")
-	}
-
-	rawJSON := resp.Candidates[0].Content.Parts[0].Text
-	rawJSON = strings.Trim(rawJSON, "`json\n`")
-
-	var result dto.PositionMonitoringResponse
-	if err := json.Unmarshal([]byte(rawJSON), &result); err != nil {
-		r.logger.Error("Failed to unmarshal position monitoring response from Gemini response", logger.ErrorField(err), logger.StringField("response", rawJSON))
-		return nil, fmt.Errorf("failed to unmarshal position monitoring response from Gemini response: %w", err)
 	}
 
 	return &result, nil

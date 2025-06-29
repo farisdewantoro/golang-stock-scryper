@@ -186,34 +186,49 @@ func FormatErrorAlertMessage(time time.Time, errType string, errMsg string, data
 
 func FormatAnalysisMessage(analysis *dto.IndividualAnalysisResponseMultiTimeframe) string {
 	var sb strings.Builder
-
-	sb.WriteString(fmt.Sprintf("📊 <b>Analysis for %s</b>\n", analysis.Symbol))
-	sb.WriteString(fmt.Sprintf("🎯 Signal: <b>%s</b>\n", analysis.Action))
-	sb.WriteString(fmt.Sprintf("📌 Last Price: %d (%s)\n", int(analysis.MarketPrice), analysis.AnalysisDate.Format("01-02 15:04")))
-	sb.WriteString(fmt.Sprintf("📶 Confidence: %d%%\n", analysis.ConfidenceLevel))
-	sb.WriteString(fmt.Sprintf("🔢 Technical Score: %d\n", analysis.TechnicalScore))
-	gain := float64(analysis.TargetPrice-analysis.BuyPrice) / float64(analysis.BuyPrice) * 100
-	loss := float64(analysis.BuyPrice-analysis.CutLoss) / float64(analysis.BuyPrice) * 100
+	signalIcon := "🟡"
+	if analysis.Action == "BUY" {
+		signalIcon = "🟢"
+	}
+	sb.WriteString(fmt.Sprintf("\n%s <b>SIGNAL %s: $%s</b> %s\n\n", signalIcon, analysis.Action, analysis.Symbol, signalIcon))
 	// Recommendation
 	if analysis.Action != "HOLD" {
-		sb.WriteString("💡 <b>Recommendation:</b>\n")
-		sb.WriteString(fmt.Sprintf("• 💵 Buy Price: $%d\n", int(analysis.BuyPrice)))
-		sb.WriteString(fmt.Sprintf("• 🎯 Target Price: $%d (%+.2f%%)\n", int(analysis.TargetPrice), gain))
-		sb.WriteString(fmt.Sprintf("• 🛡 Stop Loss: $%d (%+.2f%%)\n", int(analysis.CutLoss), loss))
-		sb.WriteString(fmt.Sprintf("• 🔁 Risk/Reward Ratio: %.2f\n", analysis.RiskRewardRatio))
-		sb.WriteString(fmt.Sprintf("• <i>⏳ Estimasi Waktu Profit: %d hari kerja</i>\n", analysis.EstimatedHoldingDays))
-	} else if analysis.Action == "HOLD" && analysis.EstimatedHoldingDays > 0 {
-		sb.WriteString(fmt.Sprintf("<i>🔍 Perkiraan Waktu Tunggu: %d hari kerja</i>\n", analysis.EstimatedHoldingDays))
+		gain := float64(analysis.TargetPrice-analysis.BuyPrice) / float64(analysis.BuyPrice) * 100
+		loss := float64(analysis.BuyPrice-analysis.CutLoss) / float64(analysis.BuyPrice) * 100
+		sb.WriteString("<b>Trade Plan</b>\n")
+		sb.WriteString(fmt.Sprintf("📌 Last Price: %d (%s)\n", int(analysis.MarketPrice), analysis.AnalysisDate.Format("01-02 15:04")))
+		sb.WriteString(fmt.Sprintf("💵 Buy Area: $%d\n", int(analysis.BuyPrice)))
+		sb.WriteString(fmt.Sprintf("🎯 Target Price: $%d (%+.2f%%)\n", int(analysis.TargetPrice), gain))
+		sb.WriteString(fmt.Sprintf("🛡 Cut Loss: $%d (%+.2f%%)\n", int(analysis.CutLoss), loss))
+		sb.WriteString(fmt.Sprintf("⚖️ Risk/Reward Ratio: %.2f\n", analysis.RiskRewardRatio))
+		sb.WriteString(fmt.Sprintf("<i>⏳ Estimasi Waktu Profit: %d hari kerja</i>\n", analysis.EstimatedHoldingDays))
+	} else if analysis.Action == "HOLD" {
+		sb.WriteString("<b>Status saat ini</b>\n")
+		sb.WriteString(fmt.Sprintf("📌 Last Price: %d (%s)\n", int(analysis.MarketPrice), analysis.AnalysisDate.Format("01-02 15:04")))
+		if analysis.EstimatedHoldingDays > 0 {
+			sb.WriteString(fmt.Sprintf("<i>🔍 Perkiraan Waktu Tunggu: %d hari kerja</i>\n", analysis.EstimatedHoldingDays))
+		}
 	}
 
-	// Reasoning
-	sb.WriteString(fmt.Sprintf("\n🧠 <b>Reasoning:</b>\n %s\n\n", analysis.Reasoning))
+	sb.WriteString("\n<b>Key Metrics</b>\n")
+	sb.WriteString(fmt.Sprintf("📶 Confidence: %d%%\n", analysis.ConfidenceLevel))
+	sb.WriteString(fmt.Sprintf("🔢 Technical Score: %d\n", analysis.TechnicalScore))
 
-	// Technical Analysis Summary
-	sb.WriteString("<b>📉 Ringkasan Per Timeframe:</b>\n")
-	sb.WriteString(fmt.Sprintf("• 1D: %s\n", analysis.TimeframeSummaries.TimeFrame1D))
-	sb.WriteString(fmt.Sprintf("• 4H: %s\n", analysis.TimeframeSummaries.TimeFrame4H))
-	sb.WriteString(fmt.Sprintf("• 1H: %s\n", analysis.TimeframeSummaries.TimeFrame1H))
+	// Reasoning
+	sb.WriteString(fmt.Sprintf("\n🧠 <b>Reasoning:</b>\n%s\n\n", analysis.Reasoning))
+
+	sb.WriteString("🔍 <b>Analisa Multi-Timeframe</b>")
+	sb.WriteString(fmt.Sprintf("\n<b>Daily (1D)</b>: %s | RSI: %d\n", analysis.TimeframeAnalysis.Timeframe4H.Trend, analysis.TimeframeAnalysis.Timeframe1D.RSI))
+	sb.WriteString(fmt.Sprintf("> Sinyal Kunci: %s\n", analysis.TimeframeAnalysis.Timeframe1D.KeySignal))
+	sb.WriteString(fmt.Sprintf("> Support/Resistance: %d/%d\n", int(analysis.TimeframeAnalysis.Timeframe1D.Support), int(analysis.TimeframeAnalysis.Timeframe1D.Resistance)))
+
+	sb.WriteString(fmt.Sprintf("\n<b>4 Hours (4H)</b>: %s | RSI: %d\n", analysis.TimeframeAnalysis.Timeframe4H.Trend, analysis.TimeframeAnalysis.Timeframe4H.RSI))
+	sb.WriteString(fmt.Sprintf("> Sinyal Kunci: %s\n", analysis.TimeframeAnalysis.Timeframe4H.KeySignal))
+	sb.WriteString(fmt.Sprintf("> Support/Resistance: %d/%d\n", int(analysis.TimeframeAnalysis.Timeframe4H.Support), int(analysis.TimeframeAnalysis.Timeframe4H.Resistance)))
+
+	sb.WriteString(fmt.Sprintf("\n<b>1 Hour (1H)</b>: %s | RSI: %d\n", analysis.TimeframeAnalysis.Timeframe1H.Trend, analysis.TimeframeAnalysis.Timeframe1H.RSI))
+	sb.WriteString(fmt.Sprintf("> Sinyal Kunci: %s\n", analysis.TimeframeAnalysis.Timeframe1H.KeySignal))
+	sb.WriteString(fmt.Sprintf("> Support/Resistance: %d/%d\n", int(analysis.TimeframeAnalysis.Timeframe1H.Support), int(analysis.TimeframeAnalysis.Timeframe1H.Resistance)))
 
 	// News Summary
 	sb.WriteString("\n📰 <b>News Analysis:</b>\n")
@@ -248,13 +263,15 @@ func FormatPositionMonitoringMessage(position *dto.PositionMonitoringResponseMul
 	iconAction := "❔"
 	if position.Action == "HOLD" {
 		iconAction = "🟡"
-	} else if position.Action == "CUTLOSS" {
+	} else if position.Action == "CUT_LOSS" {
 		iconAction = "🔴"
 	} else if position.Action == "SELL" {
 		iconAction = "🟢"
+	} else if position.Action == "ADJUST_STOP" {
+		iconAction = "🟠"
 	}
 
-	sb.WriteString(fmt.Sprintf("📊 <b>Position Update: %s</b>\n", position.Symbol))
+	sb.WriteString(fmt.Sprintf("\n📊 <b>Position Update: %s</b>\n", position.Symbol))
 	sb.WriteString(fmt.Sprintf("💰 Buy: $%d\n", int(position.BuyPrice)))
 	sb.WriteString(fmt.Sprintf("📌 Last Price: $%d %s\n", int(position.MarketPrice), unrealizedPnLPercentageStr))
 	sb.WriteString(fmt.Sprintf("🎯 TP: $%d | SL: $%d | RR: %.2f\n", int(position.TargetPrice), int(position.CutLoss), position.RiskRewardRatio))
@@ -266,7 +283,7 @@ func FormatPositionMonitoringMessage(position *dto.PositionMonitoringResponseMul
 	sb.WriteString("💡 <b>Recommendation:</b>\n")
 	sb.WriteString(fmt.Sprintf(" • Action: %s %s\n", iconAction, position.Action))
 	sb.WriteString(fmt.Sprintf(" • Target Price: $%d (%+.2f%%)\n", int(position.ExitTargetPrice), gain))
-	sb.WriteString(fmt.Sprintf(" • Stop Loss: $%d (%+.2f%%)\n", int(position.ExitCutLossPrice), loss))
+	sb.WriteString(fmt.Sprintf(" • Stop Loss: $%d (%-.2f%%)\n", int(position.ExitCutLossPrice), loss))
 	sb.WriteString(fmt.Sprintf(" • Risk/Reward Ratio: %.2f\n", position.ExitRiskRewardRatio))
 	sb.WriteString(fmt.Sprintf(" • Confidence: %d%%\n", position.ConfidenceLevel))
 	sb.WriteString(fmt.Sprintf(" • Technical Score: %d\n\n", position.TechnicalScore))
@@ -274,11 +291,18 @@ func FormatPositionMonitoringMessage(position *dto.PositionMonitoringResponseMul
 	sb.WriteString(fmt.Sprintf("🧠 <b>Reasoning:</b>\n %s\n\n", position.Reasoning))
 
 	// Technical Analysis
-	// Technical Analysis Summary
-	sb.WriteString("\n<b>📉 Ringkasan Per-Timeframe:</b>\n")
-	sb.WriteString(fmt.Sprintf("• 1D: %s\n", position.TimeframeSummaries.TimeFrame1D))
-	sb.WriteString(fmt.Sprintf("• 4H: %s\n", position.TimeframeSummaries.TimeFrame4H))
-	sb.WriteString(fmt.Sprintf("• 1H: %s\n", position.TimeframeSummaries.TimeFrame1H))
+	sb.WriteString("🔍 <b>Analisa Multi-Timeframe</b>")
+	sb.WriteString(fmt.Sprintf("\n<b>Daily (1D)</b>: %s | RSI: %d\n", position.TimeframeAnalysis.Timeframe4H.Trend, position.TimeframeAnalysis.Timeframe1D.RSI))
+	sb.WriteString(fmt.Sprintf("> Sinyal Kunci: %s\n", position.TimeframeAnalysis.Timeframe1D.KeySignal))
+	sb.WriteString(fmt.Sprintf("> Support/Resistance: %d/%d\n", int(position.TimeframeAnalysis.Timeframe1D.Support), int(position.TimeframeAnalysis.Timeframe1D.Resistance)))
+
+	sb.WriteString(fmt.Sprintf("\n<b>4 Hours (4H)</b>: %s | RSI: %d\n", position.TimeframeAnalysis.Timeframe4H.Trend, position.TimeframeAnalysis.Timeframe4H.RSI))
+	sb.WriteString(fmt.Sprintf("> Sinyal Kunci: %s\n", position.TimeframeAnalysis.Timeframe4H.KeySignal))
+	sb.WriteString(fmt.Sprintf("> Support/Resistance: %d/%d\n", int(position.TimeframeAnalysis.Timeframe4H.Support), int(position.TimeframeAnalysis.Timeframe4H.Resistance)))
+
+	sb.WriteString(fmt.Sprintf("\n<b>1 Hour (1H)</b>: %s | RSI: %d\n", position.TimeframeAnalysis.Timeframe1H.Trend, position.TimeframeAnalysis.Timeframe1H.RSI))
+	sb.WriteString(fmt.Sprintf("> Sinyal Kunci: %s\n", position.TimeframeAnalysis.Timeframe1H.KeySignal))
+	sb.WriteString(fmt.Sprintf("> Support/Resistance: %d/%d\n", int(position.TimeframeAnalysis.Timeframe1H.Support), int(position.TimeframeAnalysis.Timeframe1H.Resistance)))
 
 	// News Summary
 	sb.WriteString("\n📰 <b>News Analysis:</b>\n")

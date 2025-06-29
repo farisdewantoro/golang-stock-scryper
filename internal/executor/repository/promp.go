@@ -136,10 +136,14 @@ Berikut adalah ringkasan berita untuk saham %s selama periode %s hingga %s:
 
 	prompt := fmt.Sprintf(`
 ### PERAN ANDA
-Anda adalah analis saham berpengalaman dalam swing trading pasar saham Indonesia. Tugas Anda adalah menganalisis apakah saham %s layak untuk dibeli saat ini berdasarkan **multi-timeframe analysis** (1D, 4H, 1H) dan **ringkasan berita pasar terbaru** (jika tersedia).
+Anda adalah analis saham berpengalaman dalam swing trading pasar saham Indonesia. Anda ahli dalam **analisa teknikal kuantitatif (indikator)** dan **analisa kualitatif (price action)**. Tugas Anda adalah menganalisis apakah saham %s layak untuk dibeli saat ini.
 
 ### TUJUAN
-Evaluasi sinyal beli (BUY) berdasarkan trend dominan, volume, momentum, indikator teknikal (EMA, MACD, RSI, Bollinger Bands), serta sentimen berita (jika tersedia).
+Evaluasi sinyal beli (BUY) berdasarkan:
+1.  **Analisa Multi-Timeframe (1D, 4H, 1H)** untuk menentukan tren dominan.
+2.  **Analisa Indikator Teknikal** (EMA, MACD, RSI, Bollinger Bands, Volume) untuk mengukur momentum dan kekuatan tren.
+3.  **(BARU) Analisa Price Action**, termasuk **pola candlestick** (misalnya, Doji, Engulfing, Hammer) dan **pola grafik** (misalnya, Triangles, Flags, Head and Shoulders) untuk konfirmasi dan sinyal dini.
+4.  **Konteks Berita Pasar** (jika tersedia) sebagai faktor pendukung.
 
 Fokuskan analisis pada strategi **swing trading jangka pendek** dengan **estimasi holding period 1 hingga 7 hari kerja**. Oleh karena itu, prediksi harga dan keputusan beli harus mempertimbangkan potensi pergerakan harga dalam rentang waktu tersebut.
 
@@ -147,15 +151,16 @@ Hanya berikan sinyal **BUY** jika semua syarat teknikal dan, jika ada, berita ju
 
 ### KRITERIA KEPUTUSAN:
 - **BUY** jika:
-  - 1D dan 4H menunjukkan trend BULLISH
-  - EMA, MACD, dan RSI mendukung (tidak bertentangan)
-  - 1H minimal netral atau rebound
-  - Risk-reward ≥ 1:3
-  - Jika tersedia, berita harus mendukung (impact bullish/neutral dan confidence ≥ 0.7)
+  - 1D dan 4H menunjukkan trend BULLISH.
+  - **Ditemukan pola candlestick atau pola grafik bullish yang terkonfirmasi** pada timeframe 1D atau 4H (misalnya: Bullish Engulfing, breakout dari Ascending Triangle, Bullish Flag).
+  - Indikator EMA, MACD, dan RSI mendukung (tidak ada divergensi bearish yang kuat).
+  - 1H minimal netral atau menunjukkan sinyal rebound untuk timing entry.
+  - Risk-reward ≥ 1:3.
+  - Jika tersedia, berita harus mendukung (impact bullish/neutral dan confidence ≥ 0.7).
 - **HOLD** jika:
-  - Sinyal teknikal tidak konklusif (sideways, mixed)
-  - Trend utama belum jelas
-  - Jika tersedia, berita tidak cukup kuat mendukung atau bertentangan
+  - Sinyal teknikal tidak konklusif (sideways, mixed) atau tidak ada pola konfirmasi yang kuat.
+  - Trend utama belum jelas.
+  - Jika tersedia, berita tidak cukup kuat mendukung atau bertentangan.
 - Jika tidak ada berita, abaikan aspek berita dan fokus pada analisis teknikal.
 - Semua angka dan penilaian harus **konsisten secara logis dan matematis**.
 - Jangan berikan sinyal BUY jika tidak memenuhi semua syarat di atas.
@@ -178,31 +183,34 @@ Hanya berikan sinyal **BUY** jika semua syarat teknikal dan, jika ada, berita ju
 %.2f
 
 ### INSTRUKSI PENGISIAN REASONING
-- Jelaskan secara ringkas namun jelas alasan utama di balik keputusan akhir (BUY atau HOLD), berdasarkan indikator teknikal utama: EMA, MACD, RSI, Bollinger Bands, Support/Resistance, dan volume.
-- Sebutkan kondisi dari indikator-indikator tersebut yang paling mendukung atau bertentangan dengan keputusan.
-- Pastikan reasoning bersifat logis, seimbang, dan tidak mengabaikan sinyal teknikal yang bertentangan signifikan.
+- Jelaskan secara ringkas namun jelas alasan utama di balik keputusan akhir (BUY atau HOLD), berdasarkan: **Pola Candlestick/Grafik yang teridentifikasi**, EMA, MACD, RSI, Bollinger Bands, Support/Resistance, dan volume.
+- Sebutkan kondisi dari indikator-indikator dan pola-pola tersebut yang paling mendukung atau bertentangan dengan keputusan.
+- **Sebutkan pola spesifik yang paling mendukung atau bertentangan dengan keputusan** (contoh: "Keputusan BUY didukung oleh breakout dari pola Symmetrical Triangle dan dikonfirmasi oleh candle Bullish Marubozu dengan volume tinggi").
+- Pastikan reasoning bersifat logis, seimbang, dan tidak mengabaikan sinyal teknikal yang bertentangan signifikan.- Pastikan reasoning bersifat logis, seimbang, dan tidak mengabaikan sinyal teknikal yang bertentangan signifikan.
 - Jika tersedia, sertakan pertimbangan dari berita: apakah sentimen mendukung keputusan teknikal atau justru bertentangan. Cantumkan dampaknya terhadap harga dan skor confidence dari berita.
 - Jika tidak ada berita, jangan menyertakan analisis eksternal dan fokus pada indikator teknikal.
 - Sertakan estimasi berapa lama saham sebaiknya di-hold (dalam hari kerja) untuk mencapai target price berdasarkan tren dan momentum saat ini (1-7 hari kerja).
 - Penjelasan reasoning harus mendukung nilai "estimated_holding_days" yang diberikan. Sertakan alasan teknikal seperti kekuatan momentum, jarak ke resistance, atau prediksi waktu breakout yang memperkuat estimasi durasi tersebut.
 
 ### INSTRUKSI TEKNIS UNTUK PENGISIAN SKOR
-- Field "confidence_level" (0-100) menunjukkan tingkat keyakinan atas keputusan akhir:
-  - > 80 → Semua data teknikal dan berita (jika ada) mendukung keputusan dengan kuat
-  - 60-80 → Mayoritas sinyal mendukung, namun ada potensi risiko kecil
-  - 40-60 → Beberapa sinyal bertentangan, keyakinan keputusan masih cukup rendah
-  - < 40 → Banyak konflik antar sinyal atau sinyal tidak jelas
+- Field "confidence_level" (0-100) menunjukkan tingkat keyakinan atas keputusan akhir, dengan mempertimbangkan **SINTESIS dari kekuatan teknikal (technical_score) DAN dampak berita**.
+  - **> 80 → Sinyal teknikal sangat kuat (technical_score > 85) DAN sentimen berita (jika ada, dengan confidence > 0.7) selaras mendukung keputusan.** Semua pilar analisis menunjuk ke arah yang sama.
+  - **60-80 → Sinyal teknikal kuat, namun ada sedikit catatan.** Misalnya, technical_score tinggi tetapi berita bersifat netral, atau mayoritas sinyal teknikal mendukung tetapi ada satu aspek (misal: volume) yang kurang optimal.
+  - **40-60 → Adanya konflik yang cukup signifikan.** Misalnya, sinyal teknikal bertentangan dengan sentimen berita, atau sinyal teknikal itu sendiri sudah tidak meyakinkan (technical_score rendah).
+  - **< 40 → Banyak konflik antar sinyal atau berita yang sangat bertentangan.** Risiko sangat tinggi dan keputusan tidak dapat diandalkan.
 
-- Field "technical_score" (0-100) menunjukkan kekuatan sinyal teknikal murni (tanpa mempertimbangkan berita):
-  - > 85 → Semua indikator teknikal utama (EMA, MACD, RSI, Volume, Bollinger Bands) mendukung potensi kenaikan kuat
-  - 60-85 → Mayoritas indikator mendukung potensi naik
-  - 40-60 → Sinyal teknikal lemah atau tidak meyakinkan
-  - < 40 → Banyak indikator menunjukkan potensi penurunan / tren melemah
+- Field "technical_score" (0-100) menunjukkan kekuatan sinyal teknikal murni (tanpa mempertimbangkan berita), **menggabungkan analisa tren, pola (candlestick & grafik), indikator, dan volume.**
+  - **> 85 → Semua pilar teknikal selaras dengan kuat.** Tren jelas (misal: UPTREND), ada **pola candlestick/grafik bullish yang terkonfirmasi** (misal: breakout triangle, bull flag), didukung oleh **volume tinggi**, dan indikator utama (EMA, MACD, RSI) semuanya memberikan sinyal bullish.
+  - **60-85 → Mayoritas sinyal teknikal mendukung.** Tren utama bullish, namun mungkin **pola belum terkonfirmasi sepenuhnya**, volume rata-rata, atau salah satu indikator menunjukkan kondisi netral/jenuh.
+  - **40-60 → Sinyal teknikal lemah, sideways, atau bertentangan.** Tren tidak jelas, **tidak ada pola yang kuat terbentuk**, dan indikator memberikan sinyal campuran (misal: MACD bullish tapi RSI bearish).
+  - **< 40 → Banyak sinyal menunjukkan pelemahan atau potensi pembalikan bearish.** Misalnya, terbentuk **pola bearish (Head and Shoulders, Bearish Engulfing)**, harga breakdown dari support, atau adanya **divergensi bearish** yang kuat pada indikator.
 
 ### INSTRUKSI TEKNIS UNTUK PENGISIAN estimated_holding_days
-- Field "estimated_holding_days" menunjukkan estimasi berapa lama (dalam hari kerja) saham diperkirakan akan mencapai "target_price" setelah sinyal "BUY" diberikan.
-- Nilai harus berupa bilangan bulat antara **1 hingga 7**, sesuai dengan karakteristik swing trading jangka pendek.
-- Gunakan analisis momentum harga, kekuatan trend, posisi terhadap resistance, dan volume untuk menentukan estimasi ini.
+- Isi field "estimated_holding_days" dengan memberikan **batas waktu maksimal** (dalam hari kerja, antara 1-7) di mana "target_price" seharusnya tercapai.
+- Untuk menentukannya, pikirkan tentang rentang waktu yang realistis (misal: 3-5 hari), lalu ambil **angka tertingginya** (dalam contoh ini, 5) sebagai output.
+- **Gunakan angka yang lebih kecil (misal: 2 atau 3)** untuk sinyal breakout yang sangat kuat dan momentumnya eksplosif.
+- **Gunakan angka yang lebih besar (misal: 5, 6, atau 7)** untuk tren yang lebih lambat, bertahap, atau jika ada potensi konsolidasi.
+- Nilai ini berfungsi sebagai 'time stop', yaitu jika target tidak tercapai dalam waktu ini, momentum dianggap hilang.
 
 **Interpretasi berdasarkan "action":**
 - Jika "action" == "BUY":
@@ -212,23 +220,40 @@ Hanya berikan sinyal **BUY** jika semua syarat teknikal dan, jika ada, berita ju
   - Field ini **boleh diisi** atau dikosongkan.
   - Jika diisi, berarti estimasi kapan saham bisa layak dipertimbangkan untuk dibeli.
 
-### FORMAT OUTPUT WAJIB:
-Hanya berikan **output dalam format JSON valid**, tanpa penjelasan tambahan.
 
-Contoh JSON yang diharapkan:
+### (FINAL) INSTRUKSI PENGISIAN 'timeframe_analysis'
+Untuk setiap timeframe, isi field-field berikut dengan informasi yang paling ringkas dan penting:
+- **trend**: Pilih salah satu ENUM: "BULLISH", "BEARISH", "SIDEWAYS", "NEUTRAL_REBOUND".
+- **key_signal**: Tulis **SATU** sinyal atau peristiwa teknikal **paling signifikan** dalam bentuk frasa singkat (maksimal 7 kata). Contoh: "Breakout dari Ascending Triangle", "Candlestick Hammer di support", "Menembus resistance 1500", "RSI menunjukkan Bearish Divergence".
+- **rsi**: Tulis nilai numerik RSI saja (contoh: 68).
+- **support**: Tulis SATU level support terpenting dan terdekat.
+- **resistance**: Tulis SATU level resistance terpenting dan terdekat.
+
+### FORMAT OUTPUT WAJIB:
+Hanya berikan **output dalam format JSON valid yang sangat terstruktur**, tanpa penjelasan tambahan. Ikuti struktur di bawah ini dengan seksama.
 {
   "action": "BUY|HOLD",
   "buy_price": <float64 DEFAULT 0>,
   "target_price": <float64 DEFAULT 0>,
   "cut_loss": <float64 DEFAULT 0>,
   "confidence_level": <int 0-100>,
-  "reasoning": "<Tulis penjelasan akhir keputusan analisis teknikal dalam Bahasa Indonesia>",
+  "reasoning": "<Sintesis akhir dari semua temuan di timeframe_analysis>",
   "technical_score": <int 0-100>,
   "estimated_holding_days": <int 1-7>,
-  "timeframe_summaries": {
-    "time_frame_1d": "<Ringkasan teknikal analisis yang menjelaskan Support/Resistance, EMA, MACD, RSI, Bollinger Bands dan informasi penting lainnya>",
-    "time_frame_4h": "<Ringkasan teknikal analisis yang menjelaskan Support/Resistance, EMA, MACD, RSI, Bollinger Bands dan informasi penting lainnya>",
-    "time_frame_1h": "<Ringkasan teknikal analisis yang menjelaskan Support/Resistance, EMA, MACD, RSI, Bollinger Bands dan informasi penting lainnya>"
+  "timeframe_analysis": {
+    "time_frame_1d": {
+      "trend": "<ENUM>",
+      "key_signal": "<Frasa singkat sinyal utama>",
+      "rsi": <int>,
+      "support": <float64>,
+      "resistance": <float64>
+    },
+    "time_frame_4h": {
+      // ... (struktur yang sama) ...
+    },
+    "time_frame_1h": {
+      // ... (struktur yang sama) ...
+    }
   }
 }
 `, symbol, newsSummaryText, string(ohlcvJSON1D), string(ohlcvJSON4H), string(ohlcvJSON1H), stockData.MarketPrice)
@@ -288,19 +313,12 @@ Gunakan ringkasan ini untuk mempertimbangkan konteks eksternal (berita) dalam an
 
 	prompt := fmt.Sprintf(`
 ### PERAN ANDA
-Anda adalah analis teknikal swing trading. Evaluasi posisi saham yang sudah dibeli untuk memberikan rekomendasi: HOLD, SELL, atau CUTLOSS berdasarkan analisis teknikal dari multi-timeframe (1D, 4H, 1H), serta ringkasan berita.
+Anda adalah **Manajer Risiko dan Analis Posisi** untuk swing trading. Tugas Anda adalah mengevaluasi posisi saham yang sedang aktif (%s) dan memberikan rekomendasi taktis yang jelas: **HOLD, SELL (Take Profit), CUT_LOSS, atau ADJUST_STOP (Trailing Stop).**
 
 ### TUJUAN UTAMA
-Menentukan keputusan posisi saham saat ini: HOLD, SELL, atau CUTLOSS, berdasarkan analisis teknikal multi-timeframe, risk-reward, dan sentimen berita (jika tersedia).
+Lindungi modal dan maksimalkan keuntungan dengan mengevaluasi apakah posisi saat ini masih valid. Fokus pada **perubahan kondisi teknikal** sejak posisi dibuka dan **prospeknya** dalam sisa periode holding.
 
-### KRITERIA PENILAIAN
-Analisa berdasarkan:
-- Trend dan indikator teknikal utama (EMA, RSI, MACD, Bollinger Bands, Volume).
-- Risk-Reward Ratio relatif terhadap waktu tersisa (Max Holding).
-- Relevansi dan kekuatan sentimen berita (opsional, jika confidence tinggi).
-%s
-
-### INPUT DATA SAHAM SAYA
+### INPUT DATA POSISI SAYA
 Data posisi trading:
 - Symbol: %s
 - Buy Price: %.2f
@@ -310,6 +328,9 @@ Data posisi trading:
 - Remaining Days: %d days
 - Target Price: %.2f
 - Stop Loss: %.2f
+
+### HARGA PASAR SAAT INI
+%.2f
 
 
 ### INPUT DATA OHLC
@@ -324,64 +345,66 @@ Data posisi trading:
 %s
 
 
-### HARGA PASAR SAAT INI
-%.2f
+%s // Ringkasan berita
 
 
-
-### KRITERIA KEPUTUSAN (Gabungan Analisis Teknikal dan Berita):
-- **HOLD** jika:
-  - Trend dominan (1D dan 4H) masih naik
-  - EMA, RSI, MACD mendukung kenaikan
-  - 1H mungkin koreksi tapi tidak breakdown
-  - Risk-reward ≥ 1:3 dan waktu tersisa cukup
-  - Berita mendukung (sentimen positif atau netral, berdampak bullish)
-  - Masih ada waktu dalam periode holding
-
-- **SELL** jika:
-  - Target price hampir tercapai dan indikator teknikal mulai melemah (trend, EMA, RSI, MACD)
-  - Target sulit tercapai dalam sisa waktu
-  - Berita negatif dengan dampak bearish yang menguatkan sinyal teknikal
-
-- **CUT_LOSS** jika:
-  - Breakdown support dengan volume
-  - Trend berubah jadi BEARISH
-  - Risk tinggi, reward rendah, dan waktu hampir habis
-  - Berita buruk meningkatkan risiko signifikan (confidence tinggi, dampak bearish)
-- Semua angka dan penilaian harus **konsisten secara logis dan matematis**. 
-- Gunakan berita hanya jika relevan dan selaras atau berlawanan kuat dengan sinyal teknikal.
+### KRITERIA KEPUTUSAN UTAMA
+- **HOLD**: Tren utama masih kuat, sinyal teknikal pendukung masih valid, dan masih ada potensi mencapai target dalam sisa waktu. Tidak ada sinyal bahaya yang signifikan.
+- **SELL (Take Profit)**: Harga mendekati atau telah mencapai target, NAMUN muncul **sinyal pelemahan** (misal: divergensi bearish, pola candlestick pembalikan, volume klimaks) yang mengindikasikan potensi puncak. Atau, sisa waktu hampir habis dan momentum tidak cukup untuk mencapai target yang lebih tinggi.
+- **CUT_LOSS**: Harga menembus level stop loss awal ATAU menembus level support krusial baru dengan konfirmasi. Tren dominan telah berbalik menjadi bearish.
+- **ADJUST_STOP**: Harga telah bergerak naik secara signifikan (misal, sudah setengah jalan ke target) dan tren masih kuat. Rekomendasikan menaikkan level "exit_cut_loss_price" (misalnya ke harga beli/breakeven atau ke level support baru yang lebih tinggi) untuk **mengunci keuntungan dan menghilangkan risiko kerugian.**
 
 
 ### INSTRUKSI PENGISIAN EXIT PRICE
-- Gunakan "exit_target_price" untuk menyesuaikan target take profit secara dinamis:
-  - Jika masih realistis, gunakan nilai "target_price" sebagai "exit_target_price".
-  - Jika potensi kenaikan lebih besar dari "target_price", naikkan "exit_target_price" secara wajar berdasarkan sinyal teknikal terbaru.
-  - Jika harga mulai melemah atau waktu tidak cukup, pertimbangkan menurunkan "exit_target_price" agar tetap merealisasikan profit.
+Isi "exit_target_price" dan "exit_cut_loss_price" berdasarkan "action" yang direkomendasikan dan analisis teknikal terbaru:
 
-- Gunakan "exit_cut_loss_price" untuk menentukan batas risiko terbaru:
-  - Jika support teknikal berubah, sesuaikan level cut loss.
-  - Jika ada sinyal distribusi atau pelemahan ekstrem, pertimbangkan menaikkan "exit_cut_loss_price" agar risiko tetap terkendali.
+- **Jika "action" == "HOLD":**
+  - "exit_target_price": Pertahankan target awal jika masih realistis. Jika momentum sangat kuat dan ada ruang, Anda boleh menaikkannya ke level resistance berikutnya.
+  - "exit_cut_loss_price": Pertahankan stop loss awal, kecuali ada level support baru yang lebih tinggi dan lebih kuat yang terbentuk.
+
+- **Jika "action" == "SELL" (Take Profit):**
+  - "exit_target_price": Set ke harga pasar saat ini atau level resistance terdekat di mana sinyal pelemahan muncul. Tujuannya adalah untuk "mengamankan keuntungan sekarang".
+  - "exit_cut_loss_price": Tidak relevan, karena aksi adalah untuk menjual. Isi dengan nilai stop loss awal.
+
+- **Jika "action" == "CUT_LOSS":**
+  - "exit_target_price": Tidak relevan. Isi dengan nilai target awal.
+  - "exit_cut_loss_price": Set ke harga pasar saat ini. Tujuannya adalah untuk "keluar dari pasar secepatnya".
+
+- **Jika "action" == "ADJUST_STOP":**
+  - "exit_target_price": Pertahankan target awal, karena premisnya adalah tren masih akan berlanjut.
+  - "exit_cut_loss_price": **Ini adalah field paling penting.** Naikkan ke level yang strategis, seperti:
+    - Sedikit di atas harga beli (breakeven).
+    - Di bawah level support kunci terbaru yang lebih tinggi.
+    - Menggunakan metode trailing stop (misal: di bawah EMA 20 timeframe 4H).
 
 
 ### INSTRUKSI PENGISIAN REASONING
-- Jelaskan secara ringkas namun jelas alasan utama di balik keputusan akhir (SELL, HOLD atau CUTLOSS), berdasarkan indikator teknikal utama: EMA, MACD, RSI, Bollinger Bands, Support/Resistance, dan volume.
-- Jika terjadi perubahan dari target awal (misalnya exit_target_price ≠ target_price, atau exit_cut_loss_price ≠ stop_loss), jelaskan alasan perubahan tersebut secara eksplisit berdasarkan sinyal teknikal atau waktu tersisa.
-- Sebutkan kondisi dari indikator-indikator tersebut yang paling mendukung atau bertentangan dengan keputusan.
-- Pastikan reasoning bersifat logis, seimbang, dan tidak mengabaikan sinyal teknikal yang bertentangan signifikan.
-- Jika tersedia, sertakan pertimbangan dari berita: apakah sentimen mendukung keputusan teknikal atau justru bertentangan. Cantumkan dampaknya terhadap harga dan skor confidence dari berita.
+- **Fokus pada Perubahan:** Jelaskan **apa yang telah berubah** sejak posisi dibuka. Apakah momentum menguat atau melemah? Apakah ada sinyal pembalikan baru?
+- **Justifikasi Aksi:** Berikan alasan teknikal yang jelas di balik setiap keputusan. Jika merekomendasikan "ADJUST_STOP", jelaskan mengapa ini saat yang tepat untuk melakukannya.
+- **Penyesuaian Target/Stop:** Jika "exit_target_price" atau "exit_cut_loss_price" berbeda dari nilai awal, **jelaskan mengapa penyesuaian itu perlu** berdasarkan analisis teknikal terbaru (misal: "Stop loss dinaikkan ke 1100 untuk melindungi keuntungan karena support baru telah terbentuk di level tersebut").
 
 ### INSTRUKSI TEKNIS UNTUK PENGISIAN SKOR
-- Field "confidence_level" (0-100) menunjukkan tingkat keyakinan atas keputusan akhir:
-  - > 80 → Semua data teknikal dan berita (jika ada) mendukung keputusan dengan kuat
-  - 60-80 → Mayoritas sinyal mendukung, namun ada potensi risiko kecil
-  - 40-60 → Beberapa sinyal bertentangan, keyakinan keputusan masih cukup rendah
-  - < 40 → Banyak konflik antar sinyal atau sinyal tidak jelas
+Skor ini menilai **kesehatan posisi saat ini** dan **keyakinan pada aksi yang direkomendasikan**.
 
-- Field "technical_score" (0-100) menunjukkan kekuatan sinyal teknikal murni (tanpa mempertimbangkan berita):
-  - > 85 → Semua indikator teknikal utama (EMA, MACD, RSI, Volume, Bollinger Bands) mendukung potensi kenaikan kuat
-  - 60-85 → Mayoritas indikator mendukung potensi naik
-  - 40-60 → Sinyal teknikal lemah atau tidak meyakinkan
-  - < 40 → Banyak indikator menunjukkan potensi penurunan / tren melemah
+- **Field "confidence_level" (0-100):** Menunjukkan tingkat keyakinan atas "action" yang direkomendasikan (HOLD, SELL, dll.).
+  - **> 80 → Sinyal sangat jelas dan searah.** Contoh: Untuk "HOLD", semua indikator masih sangat bullish. Untuk "SELL", sinyal pembalikan sangat terkonfirmasi.
+  - **60-80 → Sinyal mayoritas mendukung**, tapi ada sedikit keraguan. Contoh: Untuk "HOLD", tren masih naik tapi RSI sudah overbought.
+  - **40-60 → Sinyal campuran atau tidak jelas.** Ini seringkali menjadi alasan untuk "ADJUST_STOP" atau "HOLD" dengan waspada.
+  - **< 40 → Kondisi sangat tidak menentu**, banyak sinyal konflik.
+
+- **Field "technical_score" (0-100):** Menilai **kekuatan teknikal dari posisi itu sendiri**, terlepas dari aksi yang direkomendasikan. Ini menjawab pertanyaan: "Seberapa sehat premis bullish awal saat ini?"
+  - **> 85 → Premis bullish masih sangat valid dan kuat.** Tren dominan masih naik kencang, tidak ada sinyal pembalikan signifikan.
+  - **60-85 → Premis bullish masih valid, namun mulai menunjukkan tanda-tanda normal.** Misal: tren melambat, terjadi koreksi sehat, atau RSI mendingin dari overbought.
+  - **40-60 → Premis bullish mulai goyah.** Tren menjadi sideways, muncul sinyal pelemahan awal (misal: volume menurun), atau harga kesulitan menembus resistance.
+  - **< 40 → Premis bullish awal sudah tidak valid.** Tren telah berbalik, support penting telah ditembus, atau sinyal pembalikan bearish sangat kuat.
+
+### (FINAL) INSTRUKSI PENGISIAN 'timeframe_analysis'
+Isi field-field berikut dengan informasi yang paling ringkas dan penting, **dengan fokus pada kondisi saat ini**:
+- **trend**: Pilih salah satu ENUM: "BULLISH", "BEARISH", "SIDEWAYS", "WEAKENING_BULLISH" (melemah), "REVERSING_TO_BEARISH" (pembalikan).
+- **key_signal**: Tulis **SATU** sinyal atau peristiwa teknikal **paling signifikan saat ini**. Contoh: "Harga tertahan di resistance", "Membentuk Bearish Engulfing", "RSI menunjukkan divergensi bearish".
+- **rsi**: Tulis nilai numerik RSI saja (contoh: 75).
+- **support**: Tulis SATU level support terpenting dan terdekat.
+- **resistance**: Tulis SATU level resistance terpenting dan terdekat.
 
 
 ### FORMAT OUTPUT WAJIB (DALAM JSON)
@@ -389,13 +412,19 @@ Data posisi trading:
   "action": "HOLD|SELL|CUTLOSS",
   "exit_target_price": <float64 DEFAULT 0>,
   "exit_cut_loss_price": <float64 DEFAULT 0>,
-  "reasoning": "<Tulis penjelasan dan alasan akhir keputusan analisis ini dalam Bahasa Indonesia>",
+  "reasoning": "<Penjelasan fokus pada PERUBAHAN kondisi dan justifikasi untuk aksi yang direkomendasikan>",
   "confidence_level": <int 0-100>,
   "technical_score": <int 0-100>,
-  "timeframe_summaries": {
-    "time_frame_1d": "<Ringkasan teknikal analisis yang menjelaskan Support/Resistance, EMA, MACD, RSI, Bollinger Bands dan informasi penting lainnya>",
-    "time_frame_4h": "<Ringkasan teknikal analisis yang menjelaskan Support/Resistance, EMA, MACD, RSI, Bollinger Bands dan informasi penting lainnya>",
-    "time_frame_1h": "<Ringkasan teknikal analisis yang menjelaskan Support/Resistance, EMA, MACD, RSI, Bollinger Bands dan informasi penting lainnya>"
+  "timeframe_analysis": {
+    "time_frame_1d": {
+      "trend": "<ENUM>",
+      "key_signal": "<Frasa singkat sinyal utama saat ini>",
+      "rsi": <int>,
+      "support": <float64>,
+      "resistance": <float64>
+    },
+    "time_frame_4h": { /* ... struktur yang sama ... */ },
+    "time_frame_1h": { /* ... struktur yang sama ... */ }
   }
 }
 
@@ -403,9 +432,9 @@ Ringkasan teknikal analisis yang menjelaskan Support/Resistance, EMA, MACD, RSI,
 
 ### CATATAN
 - Pastikan semua keputusan didasarkan pada kombinasi sinyal teknikal dan konteks berita, bukan berdasarkan perasaan atau prediksi jangka panjang. Jika indikator saling bertentangan, prioritaskan risk-reward dan waktu tersisa sebagai penentu akhir.
-`, newsSummaryText, request.Symbol, request.BuyPrice, request.BuyTime.Format("2006-01-02T15:04:05-07:00"),
-		request.MaxHoldingPeriodDays, positionAgeDays, remainingDays, request.TargetPrice, request.StopLoss,
-		string(ohlcvJSON1D), string(ohlcvJSON4H), string(ohlcvJSON1H), stockData.MarketPrice)
+`, request.Symbol, request.Symbol, request.BuyPrice, request.BuyTime.Format("2006-01-02T15:04:05-07:00"),
+		request.MaxHoldingPeriodDays, positionAgeDays, remainingDays, request.TargetPrice, request.StopLoss, stockData.MarketPrice,
+		string(ohlcvJSON1D), string(ohlcvJSON4H), string(ohlcvJSON1H), newsSummaryText)
 
 	return prompt
 }

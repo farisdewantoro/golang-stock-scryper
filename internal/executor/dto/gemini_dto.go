@@ -49,20 +49,20 @@ type IndividualAnalysisResponse struct {
 }
 
 type IndividualAnalysisResponseMultiTimeframe struct {
-	MarketPrice          float64            `json:"market_price"`
-	Symbol               string             `json:"symbol"`
-	AnalysisDate         time.Time          `json:"analysis_date"`
-	Action               string             `json:"action"`
-	BuyPrice             float64            `json:"buy_price,omitempty"`
-	TargetPrice          float64            `json:"target_price,omitempty"`
-	CutLoss              float64            `json:"cut_loss,omitempty"`
-	ConfidenceLevel      int                `json:"confidence_level,omitempty"`
-	Reasoning            string             `json:"reasoning"`
-	RiskRewardRatio      float64            `json:"risk_reward_ratio,omitempty"`
-	TechnicalScore       int                `json:"technical_score,omitempty"`
-	TimeframeSummaries   TimeframeSummaries `json:"timeframe_summaries"`
-	NewsSummary          NewsSummary        `json:"news_summary,omitempty"`
-	EstimatedHoldingDays int                `json:"estimated_holding_days"`
+	MarketPrice          float64           `json:"market_price"`
+	Symbol               string            `json:"symbol"`
+	AnalysisDate         time.Time         `json:"analysis_date"`
+	Action               string            `json:"action"`
+	BuyPrice             float64           `json:"buy_price,omitempty"`
+	TargetPrice          float64           `json:"target_price,omitempty"`
+	CutLoss              float64           `json:"cut_loss,omitempty"`
+	ConfidenceLevel      int               `json:"confidence_level,omitempty"`
+	Reasoning            string            `json:"reasoning"`
+	RiskRewardRatio      float64           `json:"risk_reward_ratio,omitempty"`
+	TechnicalScore       int               `json:"technical_score,omitempty"`
+	NewsSummary          NewsSummary       `json:"news_summary,omitempty"`
+	EstimatedHoldingDays int               `json:"estimated_holding_days"`
+	TimeframeAnalysis    TimeframeAnalysis `json:"timeframe_analysis"`
 }
 
 type TimeframeSummaries struct {
@@ -113,48 +113,37 @@ type PositionMonitoringRequest struct {
 	StopLoss             float64   `json:"stop_loss" binding:"required"`
 }
 
-type PositionMonitoringResponse struct {
-	AnalysisDate         time.Time              `json:"analysis_date"`
-	Symbol               string                 `json:"symbol"`
-	MarketPrice          float64                `json:"market_price"`
-	BuyDate              time.Time              `json:"buy_date"`
-	BuyPrice             float64                `json:"buy_price"`
-	TargetPrice          float64                `json:"target_price"`
-	StopLoss             float64                `json:"stop_loss"`
-	MaxHoldingPeriodDays int                    `json:"max_holding_period_days"`
-	TechnicalAnalysis    TechnicalAnalysis      `json:"technical_analysis"`
-	NewsSummary          NewsSummary            `json:"news_summary,omitempty"`
-	Recommendation       RecommendationPosition `json:"recommendation,omitempty"`
-}
-
-type RecommendationPosition struct {
-	Action          string   `json:"action"`
-	BuyPrice        float64  `json:"buy_price,omitempty"`
-	TargetPrice     float64  `json:"target_price,omitempty"`
-	CutLoss         float64  `json:"cut_loss,omitempty"`
-	ConfidenceLevel int      `json:"confidence_level"`
-	ExitReasoning   string   `json:"exit_reasoning"`
-	ExitConditions  []string `json:"exit_conditions"`
-	RiskRewardRatio float64  `json:"risk_reward_ratio"`
-}
-
 type PositionMonitoringResponseMultiTimeframe struct {
-	MarketPrice          float64            `json:"market_price"`
-	Symbol               string             `json:"symbol"`
-	AnalysisDate         time.Time          `json:"analysis_date"`
-	Action               string             `json:"action"`
-	BuyPrice             float64            `json:"buy_price,omitempty"`
-	BuyDate              time.Time          `json:"buy_date,omitempty"`
-	MaxHoldingPeriodDays int                `json:"max_holding_period_days,omitempty"`
-	TargetPrice          float64            `json:"target_price,omitempty"`
-	CutLoss              float64            `json:"cut_loss,omitempty"`
-	ExitTargetPrice      float64            `json:"exit_target_price,omitempty"`
-	ExitCutLossPrice     float64            `json:"exit_cut_loss_price,omitempty"`
-	ConfidenceLevel      int                `json:"confidence_level"`
-	Reasoning            string             `json:"reasoning"`
-	RiskRewardRatio      float64            `json:"risk_reward_ratio"`
-	ExitRiskRewardRatio  float64            `json:"exit_risk_reward_ratio"`
-	TechnicalScore       int                `json:"technical_score"`
-	TimeframeSummaries   TimeframeSummaries `json:"timeframe_summaries"`
-	NewsSummary          NewsSummary        `json:"news_summary,omitempty"`
+	MarketPrice          float64           `json:"market_price"`
+	Symbol               string            `json:"symbol"`
+	AnalysisDate         time.Time         `json:"analysis_date"`
+	Action               string            `json:"action"`
+	BuyPrice             float64           `json:"buy_price,omitempty"`
+	BuyDate              time.Time         `json:"buy_date,omitempty"`
+	MaxHoldingPeriodDays int               `json:"max_holding_period_days,omitempty"`
+	TargetPrice          float64           `json:"target_price,omitempty"`
+	CutLoss              float64           `json:"cut_loss,omitempty"`
+	ExitTargetPrice      float64           `json:"exit_target_price,omitempty"`
+	ExitCutLossPrice     float64           `json:"exit_cut_loss_price,omitempty"`
+	ConfidenceLevel      int               `json:"confidence_level"`
+	Reasoning            string            `json:"reasoning"`
+	RiskRewardRatio      float64           `json:"risk_reward_ratio"`
+	ExitRiskRewardRatio  float64           `json:"exit_risk_reward_ratio"`
+	TechnicalScore       int               `json:"technical_score"`
+	NewsSummary          NewsSummary       `json:"news_summary,omitempty"`
+	TimeframeAnalysis    TimeframeAnalysis `json:"timeframe_analysis"`
+}
+
+type TimeframeAnalysis struct {
+	Timeframe1D TimeframeAnalysisData `json:"time_frame_1d"`
+	Timeframe4H TimeframeAnalysisData `json:"time_frame_4h"`
+	Timeframe1H TimeframeAnalysisData `json:"time_frame_1h"`
+}
+
+type TimeframeAnalysisData struct {
+	Trend      string  `json:"trend"`
+	KeySignal  string  `json:"key_signal"`
+	RSI        int     `json:"rsi"`
+	Support    float64 `json:"support"`
+	Resistance float64 `json:"resistance"`
 }
