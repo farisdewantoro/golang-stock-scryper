@@ -223,7 +223,7 @@ Hanya berikan sinyal **BUY** jika semua syarat teknikal dan, jika ada, berita ju
 
 ### (FINAL) INSTRUKSI PENGISIAN 'timeframe_analysis'
 Untuk setiap timeframe, isi field-field berikut dengan informasi yang paling ringkas dan penting:
-- **trend**: Pilih salah satu ENUM: "BULLISH", "BEARISH", "SIDEWAYS", "NEUTRAL_REBOUND".
+- **trend**: Pilih salah satu ENUM: "BULLISH", "BEARISH", "SIDEWAYS", "WEAKENING_BULLISH" (melemah), "REVERSING_TO_BEARISH" (pembalikan).
 - **key_signal**: Tulis **SATU** sinyal atau peristiwa teknikal **paling signifikan** dalam bentuk frasa singkat (maksimal 7 kata). Contoh: "Breakout dari Ascending Triangle", "Candlestick Hammer di support", "Menembus resistance 1500", "RSI menunjukkan Bearish Divergence".
 - **rsi**: Tulis nilai numerik RSI saja (contoh: 68).
 - **support**: Tulis SATU level support terpenting dan terdekat.
@@ -399,10 +399,10 @@ Skor ini menilai **kesehatan posisi saat ini** dan **keyakinan pada aksi yang di
   - **< 40 → Premis bullish awal sudah tidak valid.** Tren telah berbalik, support penting telah ditembus, atau sinyal pembalikan bearish sangat kuat.
 
 ### (FINAL) INSTRUKSI PENGISIAN 'timeframe_analysis'
-Isi field-field berikut dengan informasi yang paling ringkas dan penting, **dengan fokus pada kondisi saat ini**:
+Untuk setiap timeframe, isi field-field berikut dengan informasi yang paling ringkas dan penting:
 - **trend**: Pilih salah satu ENUM: "BULLISH", "BEARISH", "SIDEWAYS", "WEAKENING_BULLISH" (melemah), "REVERSING_TO_BEARISH" (pembalikan).
-- **key_signal**: Tulis **SATU** sinyal atau peristiwa teknikal **paling signifikan saat ini**. Contoh: "Harga tertahan di resistance", "Membentuk Bearish Engulfing", "RSI menunjukkan divergensi bearish".
-- **rsi**: Tulis nilai numerik RSI saja (contoh: 75).
+- **key_signal**: Tulis **SATU** sinyal atau peristiwa teknikal **paling signifikan** dalam bentuk frasa singkat (maksimal 7 kata). Contoh: "Breakout dari Ascending Triangle", "Candlestick Hammer di support", "Menembus resistance 1500", "RSI menunjukkan Bearish Divergence".
+- **rsi**: Tulis nilai numerik RSI saja (contoh: 68).
 - **support**: Tulis SATU level support terpenting dan terdekat.
 - **resistance**: Tulis SATU level resistance terpenting dan terdekat.
 
