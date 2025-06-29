@@ -39,9 +39,7 @@ func NewGeminiAIRepository(cfg *config.Config, log *logger.Logger, genAiClient *
 	tokenLimiter := ratelimit.NewTokenLimiter(cfg.Gemini.MaxTokenPerMinute)
 
 	return &geminiAIRepository{
-		client: &http.Client{
-			Timeout: 90 * time.Second,
-		},
+		client:         &http.Client{},
 		cfg:            cfg,
 		logger:         log,
 		requestLimiter: requestLimiter,
@@ -110,7 +108,7 @@ func (r *geminiAIRepository) executeGeminiAIRequest(ctx context.Context, prompt 
 	}
 
 	//debug
-	jsonPrompt, _ := json.Marshal(prompt)
+	jsonPrompt, _ := json.MarshalIndent(prompt, "", "  ")
 	r.logger.Debug("Request Gemini API", logger.StringField("prompt", string(jsonPrompt)))
 
 	jsonPayload, err := json.Marshal(payload)
