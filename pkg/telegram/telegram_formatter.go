@@ -198,8 +198,8 @@ func FormatAnalysisMessage(analysis *dto.IndividualAnalysisResponseMultiTimefram
 		sb.WriteString("<b>Trade Plan</b>\n")
 		sb.WriteString(fmt.Sprintf("📌 Last Price: %d (%s)\n", int(analysis.MarketPrice), analysis.AnalysisDate.Format("01-02 15:04")))
 		sb.WriteString(fmt.Sprintf("💵 Buy Area: $%d\n", int(analysis.BuyPrice)))
-		sb.WriteString(fmt.Sprintf("🎯 Target Price: $%d (%+.2f%%)\n", int(analysis.TargetPrice), gain))
-		sb.WriteString(fmt.Sprintf("🛡 Cut Loss: $%d (%+.2f%%)\n", int(analysis.CutLoss), loss))
+		sb.WriteString(fmt.Sprintf("🎯 Target Price: $%d %s\n", int(analysis.TargetPrice), utils.FormatPercentage(gain)))
+		sb.WriteString(fmt.Sprintf("🛡 Cut Loss: $%d %s\n", int(analysis.CutLoss), utils.FormatPercentage(loss)))
 		sb.WriteString(fmt.Sprintf("⚖️ Risk/Reward Ratio: %.2f\n", analysis.RiskRewardRatio))
 		sb.WriteString(fmt.Sprintf("<i>⏳ Estimasi Waktu Profit: %d hari kerja</i>\n", analysis.EstimatedHoldingDays))
 	} else if analysis.Action == "HOLD" {
@@ -251,11 +251,6 @@ func FormatPositionMonitoringMessage(position *dto.PositionMonitoringResponseMul
 	var sb strings.Builder
 
 	unrealizedPnLPercentage := ((position.MarketPrice - position.BuyPrice) / position.BuyPrice) * 100
-	unrealizedPnLPercentageStr := fmt.Sprintf("(+%.2f)", unrealizedPnLPercentage)
-
-	if unrealizedPnLPercentage < 0 {
-		unrealizedPnLPercentageStr = fmt.Sprintf("(%.2f)", unrealizedPnLPercentage)
-	}
 
 	daysRemaining := utils.RemainingDays(position.MaxHoldingPeriodDays, position.BuyDate)
 	ageDays := int(time.Since(position.BuyDate).Hours() / 24)
@@ -273,7 +268,7 @@ func FormatPositionMonitoringMessage(position *dto.PositionMonitoringResponseMul
 
 	sb.WriteString(fmt.Sprintf("\n📊 <b>Position Update: %s</b>\n", position.Symbol))
 	sb.WriteString(fmt.Sprintf("💰 Buy: $%d\n", int(position.BuyPrice)))
-	sb.WriteString(fmt.Sprintf("📌 Last Price: $%d %s\n", int(position.MarketPrice), unrealizedPnLPercentageStr))
+	sb.WriteString(fmt.Sprintf("📌 Last Price: $%d %s\n", int(position.MarketPrice), utils.FormatPercentage(unrealizedPnLPercentage)))
 	sb.WriteString(fmt.Sprintf("🎯 TP: $%d | SL: $%d | RR: %.2f\n", int(position.TargetPrice), int(position.CutLoss), position.RiskRewardRatio))
 	sb.WriteString(fmt.Sprintf("📈 Age: %d days | Remaining: %d days\n\n", ageDays, daysRemaining))
 
@@ -282,8 +277,8 @@ func FormatPositionMonitoringMessage(position *dto.PositionMonitoringResponseMul
 	loss := float64(position.BuyPrice-position.ExitCutLossPrice) / float64(position.BuyPrice) * 100
 	sb.WriteString("💡 <b>Recommendation:</b>\n")
 	sb.WriteString(fmt.Sprintf(" • Action: %s %s\n", iconAction, position.Action))
-	sb.WriteString(fmt.Sprintf(" • Target Price: $%d (%+.2f%%)\n", int(position.ExitTargetPrice), gain))
-	sb.WriteString(fmt.Sprintf(" • Stop Loss: $%d (%-.2f%%)\n", int(position.ExitCutLossPrice), loss))
+	sb.WriteString(fmt.Sprintf(" • Target Price: $%d %s\n", int(position.ExitTargetPrice), utils.FormatPercentage(gain)))
+	sb.WriteString(fmt.Sprintf(" • Stop Loss: $%d %s\n", int(position.ExitCutLossPrice), utils.FormatPercentage(loss)))
 	sb.WriteString(fmt.Sprintf(" • Risk/Reward Ratio: %.2f\n", position.ExitRiskRewardRatio))
 	sb.WriteString(fmt.Sprintf(" • Confidence: %d%%\n", position.ConfidenceLevel))
 	sb.WriteString(fmt.Sprintf(" • Technical Score: %d\n\n", position.TechnicalScore))
