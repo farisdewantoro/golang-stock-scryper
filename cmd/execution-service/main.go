@@ -160,6 +160,7 @@ func runServe(cmd *cobra.Command, args []string) {
 			stockMentionRepo,
 			stockNewsRepo,
 			stocksRepo,
+			stockPositionsRepo,
 		),
 		strategy.NewStockPriceAlertStrategy(
 			appLogger,
