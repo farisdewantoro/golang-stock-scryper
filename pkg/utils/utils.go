@@ -3,6 +3,7 @@ package utils
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"golang-stock-scryper/pkg/logger"
 	"html"
 	"log"
@@ -114,4 +115,11 @@ func CapitalizeSentence(input string) string {
 	runes := []rune(input)
 	runes[0] = unicode.ToUpper(runes[0])
 	return string(runes)
+}
+
+func FormatPercentage(value float64) string {
+	if value >= 0 {
+		return fmt.Sprintf("+%.1f%%", value)
+	}
+	return fmt.Sprintf("-%.1f%%", -value)
 }
