@@ -31,29 +31,40 @@ import (
 
 // StockNewsScraperStrategy defines the strategy for scraping stock news.
 type StockNewsScraperStrategy struct {
-	db               *gorm.DB
-	logger           *logger.Logger
-	decoder          *decoder.GoogleDecoder
-	aiRepo           repository.AIRepository
-	stockMentionRepo repository.StockMentionRepository
-	stockNewsRepo    repository.StockNewsRepository
-	client           *http.Client
-	inmemoryCache    *cache.Cache
-	stockRepo        repository.StocksRepository
+	db                *gorm.DB
+	logger            *logger.Logger
+	decoder           *decoder.GoogleDecoder
+	aiRepo            repository.AIRepository
+	stockMentionRepo  repository.StockMentionRepository
+	stockNewsRepo     repository.StockNewsRepository
+	client            *http.Client
+	inmemoryCache     *cache.Cache
+	stockRepo         repository.StocksRepository
+	stockPositionRepo repository.StockPositionsRepository
 }
 
 // NewStockNewsScraperStrategy creates a new instance of StockNewsScraperStrategy.
-func NewStockNewsScraperStrategy(db *gorm.DB, logger *logger.Logger, decoder *decoder.GoogleDecoder, aiRepo repository.AIRepository, stockMentionRepo repository.StockMentionRepository, stockNewsRepo repository.StockNewsRepository, stockRepo repository.StocksRepository) *StockNewsScraperStrategy {
+func NewStockNewsScraperStrategy(
+	db *gorm.DB,
+	logger *logger.Logger,
+	decoder *decoder.GoogleDecoder,
+	aiRepo repository.AIRepository,
+	stockMentionRepo repository.StockMentionRepository,
+	stockNewsRepo repository.StockNewsRepository,
+	stockRepo repository.StocksRepository,
+	stockPositionRepo repository.StockPositionsRepository,
+) *StockNewsScraperStrategy {
 	return &StockNewsScraperStrategy{
-		db:               db,
-		logger:           logger,
-		decoder:          decoder,
-		aiRepo:           aiRepo,
-		stockMentionRepo: stockMentionRepo,
-		stockNewsRepo:    stockNewsRepo,
-		client:           &http.Client{},
-		inmemoryCache:    cache.New(5*time.Minute, 10*time.Minute),
-		stockRepo:        stockRepo,
+		db:                db,
+		logger:            logger,
+		decoder:           decoder,
+		aiRepo:            aiRepo,
+		stockMentionRepo:  stockMentionRepo,
+		stockNewsRepo:     stockNewsRepo,
+		client:            &http.Client{},
+		inmemoryCache:     cache.New(5*time.Minute, 10*time.Minute),
+		stockRepo:         stockRepo,
+		stockPositionRepo: stockPositionRepo,
 	}
 }
 
@@ -81,6 +92,7 @@ type StockNewsScraperPayload struct {
 	UseStockList         bool           `json:"use_stock_list"`
 	DefaultQueryParam    string         `json:"default_query_param"`
 	SourcePriority       map[string]int `json:"source_priority"`
+	UseStockPosition     bool           `json:"use_stock_position"`
 }
 
 func (s *StockNewsScraperStrategy) Execute(ctx context.Context, job *entity.Job) (string, error) {
@@ -124,6 +136,19 @@ func (s *StockNewsScraperStrategy) Execute(ctx context.Context, job *entity.Job)
 	if len(payload.AdditionalStockCodes) > 0 {
 		for _, stockCode := range payload.AdditionalStockCodes {
 			queriesRSS = append(queriesRSS, fmt.Sprintf("/search?q=saham+%s&%s", stockCode, defaultQueryParam))
+		}
+	}
+
+	if payload.UseStockPosition {
+		stockPositions, err := s.stockPositionRepo.Get(ctx, dto.GetStockPositionsParam{
+			IsActive: utils.ToPointer(true),
+		})
+		if err != nil {
+			s.logger.Error("Failed to get stock positions", logger.ErrorField(err))
+			return "", fmt.Errorf("failed to get stock positions: %w", err)
+		}
+		for _, stockPosition := range stockPositions {
+			queriesRSS = append(queriesRSS, fmt.Sprintf("/search?q=saham+%s&%s", stockPosition.StockCode, defaultQueryParam))
 		}
 	}
 
