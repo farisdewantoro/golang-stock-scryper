@@ -80,6 +80,8 @@ func (r *tradingViewRepository) GetStockBuyList(ctx context.Context, payload map
 		}
 	}
 
+	r.log.DebugContext(ctx, "TradingView Found stock codes", logger.StringField("stock_codes", strings.Join(stockCodes, ", ")))
+
 	return stockCodes, nil
 }
 
