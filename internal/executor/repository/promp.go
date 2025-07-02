@@ -313,7 +313,7 @@ Gunakan ringkasan ini untuk mempertimbangkan konteks eksternal (berita) dalam an
 
 	prompt := fmt.Sprintf(`
 ### PERAN ANDA
-Anda adalah **Manajer Risiko dan Analis Posisi** untuk swing trading. Tugas Anda adalah mengevaluasi posisi saham yang sedang aktif (%s) dan memberikan rekomendasi taktis yang jelas: **HOLD, SELL (Take Profit), CUT_LOSS, atau ADJUST_STOP (Trailing Stop).**
+Anda adalah **Manajer Risiko dan Analis Posisi** untuk swing trading. Tugas Anda adalah mengevaluasi posisi saham yang sedang aktif (%s) dan memberikan rekomendasi taktis yang jelas: **HOLD, TAKE_PROFIT, CUT_LOSS, atau TRAIL_STOP.**
 
 ### TUJUAN UTAMA
 Lindungi modal dan maksimalkan keuntungan dengan mengevaluasi apakah posisi saat ini masih valid. Fokus pada **perubahan kondisi teknikal** sejak posisi dibuka dan **prospeknya** dalam sisa periode holding.
@@ -349,10 +349,32 @@ Data posisi trading:
 
 
 ### KRITERIA KEPUTUSAN UTAMA
-- **HOLD**: Tren utama masih kuat, sinyal teknikal pendukung masih valid, dan masih ada potensi mencapai target dalam sisa waktu. Tidak ada sinyal bahaya yang signifikan.
-- **SELL (Take Profit)**: Harga mendekati atau telah mencapai target, NAMUN muncul **sinyal pelemahan** (misal: divergensi bearish, pola candlestick pembalikan, volume klimaks) yang mengindikasikan potensi puncak. Atau, sisa waktu hampir habis dan momentum tidak cukup untuk mencapai target yang lebih tinggi.
-- **CUT_LOSS**: Harga menembus level stop loss awal ATAU menembus level support krusial baru dengan konfirmasi. Tren dominan telah berbalik menjadi bearish.
-- **ADJUST_STOP**: Harga telah bergerak naik secara signifikan (misal, sudah setengah jalan ke target) dan tren masih kuat. Rekomendasikan menaikkan level "exit_cut_loss_price" (misalnya ke harga beli/breakeven atau ke level support baru yang lebih tinggi) untuk **mengunci keuntungan dan menghilangkan risiko kerugian.**
+Gunakan aturan ketat di bawah ini untuk menentukan "action".
+
+- **HOLD**:
+  - **Kondisi (Semua harus terpenuhi):**
+    1.  **Struktur Tren:** Harga saat ini berada di atas MA20, DAN MA20 berada di atas MA50 pada timeframe 1D/4H.
+    2.  **Momentum:** RSI berada di atas 50 dan tidak menunjukkan *bearish divergence* yang jelas.
+    3.  **Keamanan:** Harga masih aman di atas level support terdekat (misal: *swing low* terakhir atau MA20).
+
+- **TAKE_PROFIT**:
+  - **Kondisi (Salah satu terpenuhi):**
+    1.  **Target Tercapai:** Harga pasar (market_price) telah menyentuh atau melampaui target_price.
+    2.  **Pelemahan Terkonfirmasi:** Harga mendekati target_price DAN muncul salah satu sinyal kuat berikut di timeframe 1D/4H:
+        - Bearish Divergence yang jelas pada RSI atau MACD.
+        - Muncul pola candlestick pembalikan kuat (Bearish Engulfing, Shooting Star).
+        - Volume klimaks dimana harga gagal naik lebih lanjut.
+
+- **CUT_LOSS**:
+  - **Kondisi (Salah satu terpenuhi dengan konfirmasi):**
+    1.  **Stop Loss Awal Ditembus:** Harga penutupan (close_price) berada di bawah stop_loss awal. Ini aturan absolut.
+    2.  **Struktur Tren Patah:** Harga ditutup di bawah support krusial (MA50 pada 1D) selama 2 periode berturut-turut ATAU terjadi sinyal Death Cross (MA20 memotong ke bawah MA50).
+
+- **TRAIL_STOP**:
+  - **Kondisi (Posisi sudah profit DAN tren masih kuat):**
+    1.  Telah tercapai Rasio Risk/Reward minimal 1:1. (current_price >= buy_price + (buy_price - stop_loss)).
+    2.  Kondisi untuk HOLD masih terpenuhi (tren masih kuat).
+  - **Tujuan:** Aksi ini adalah untuk **mengamankan profit** dengan menaikkan level exit_cut_loss_price, BUKAN untuk keluar dari pasar.
 
 
 ### INSTRUKSI PENGISIAN EXIT PRICE
@@ -362,7 +384,7 @@ Isi "exit_target_price" dan "exit_cut_loss_price" berdasarkan "action" yang dire
   - "exit_target_price": Pertahankan target awal jika masih realistis. Jika momentum sangat kuat dan ada ruang, Anda boleh menaikkannya ke level resistance berikutnya.
   - "exit_cut_loss_price": Pertahankan stop loss awal, kecuali ada level support baru yang lebih tinggi dan lebih kuat yang terbentuk.
 
-- **Jika "action" == "SELL" (Take Profit):**
+- **Jika "action" == "TAKE_PROFIT":**
   - "exit_target_price": Set ke harga pasar saat ini atau level resistance terdekat di mana sinyal pelemahan muncul. Tujuannya adalah untuk "mengamankan keuntungan sekarang".
   - "exit_cut_loss_price": Tidak relevan, karena aksi adalah untuk menjual. Isi dengan nilai stop loss awal.
 
@@ -370,7 +392,7 @@ Isi "exit_target_price" dan "exit_cut_loss_price" berdasarkan "action" yang dire
   - "exit_target_price": Tidak relevan. Isi dengan nilai target awal.
   - "exit_cut_loss_price": Set ke harga pasar saat ini. Tujuannya adalah untuk "keluar dari pasar secepatnya".
 
-- **Jika "action" == "ADJUST_STOP":**
+- **Jika "action" == "TRAIL_STOP":**
   - "exit_target_price": Pertahankan target awal, karena premisnya adalah tren masih akan berlanjut.
   - "exit_cut_loss_price": **Ini adalah field paling penting.** Naikkan ke level yang strategis, seperti:
     - Sedikit di atas harga beli (breakeven).
@@ -379,9 +401,9 @@ Isi "exit_target_price" dan "exit_cut_loss_price" berdasarkan "action" yang dire
 
 
 ### INSTRUKSI PENGISIAN REASONING
-- **Fokus pada Perubahan:** Jelaskan **apa yang telah berubah** sejak posisi dibuka. Apakah momentum menguat atau melemah? Apakah ada sinyal pembalikan baru?
-- **Justifikasi Aksi:** Berikan alasan teknikal yang jelas di balik setiap keputusan. Jika merekomendasikan "ADJUST_STOP", jelaskan mengapa ini saat yang tepat untuk melakukannya.
-- **Penyesuaian Target/Stop:** Jika "exit_target_price" atau "exit_cut_loss_price" berbeda dari nilai awal, **jelaskan mengapa penyesuaian itu perlu** berdasarkan analisis teknikal terbaru (misal: "Stop loss dinaikkan ke 1100 untuk melindungi keuntungan karena support baru telah terbentuk di level tersebut").
+- **Fokus pada Perubahan & Aturan:** Jelaskan **apa yang telah berubah** dan **aturan mana dari KRITERIA KEPUTUSAN** yang memicu rekomendasi Anda.
+- **Justifikasi Aksi:** Berikan alasan teknikal yang jelas. Contoh: "Aksi adalah TRAIL_STOP karena R:R 1:1 telah tercapai dan harga masih kuat di atas MA20, sesuai kriteria."
+- **Penyesuaian Stop:** Jika "action" adalah "TRAIL_STOP", jelaskan mengapa level "exit_cut_loss_price" yang baru itu dipilih. Contoh: "Stop loss dinaikkan ke 1100 (harga beli) untuk menghilangkan risiko kerugian."
 
 ### INSTRUKSI TEKNIS UNTUK PENGISIAN SKOR
 Skor ini menilai **kesehatan posisi saat ini** dan **keyakinan pada aksi yang direkomendasikan**.
@@ -389,7 +411,7 @@ Skor ini menilai **kesehatan posisi saat ini** dan **keyakinan pada aksi yang di
 - **Field "confidence_level" (0-100):** Menunjukkan tingkat keyakinan atas "action" yang direkomendasikan (HOLD, SELL, dll.).
   - **> 80 → Sinyal sangat jelas dan searah.** Contoh: Untuk "HOLD", semua indikator masih sangat bullish. Untuk "SELL", sinyal pembalikan sangat terkonfirmasi.
   - **60-80 → Sinyal mayoritas mendukung**, tapi ada sedikit keraguan. Contoh: Untuk "HOLD", tren masih naik tapi RSI sudah overbought.
-  - **40-60 → Sinyal campuran atau tidak jelas.** Ini seringkali menjadi alasan untuk "ADJUST_STOP" atau "HOLD" dengan waspada.
+  - **40-60 → Sinyal campuran atau tidak jelas.** Ini seringkali menjadi alasan untuk "TRAIL_STOP" atau "HOLD" dengan waspada.
   - **< 40 → Kondisi sangat tidak menentu**, banyak sinyal konflik.
 
 - **Field "technical_score" (0-100):** Menilai **kekuatan teknikal dari posisi itu sendiri**, terlepas dari aksi yang direkomendasikan. Ini menjawab pertanyaan: "Seberapa sehat premis bullish awal saat ini?"
@@ -410,7 +432,7 @@ Untuk setiap timeframe, isi field-field berikut dengan informasi yang paling rin
 ### FORMAT OUTPUT WAJIB:
 Hanya berikan **output dalam format JSON valid yang sangat terstruktur**, tanpa penjelasan tambahan. Ikuti struktur di bawah ini dengan seksama.
 {
-  "action": "HOLD|SELL|CUTLOSS",
+  "action": "HOLD|TAKE_PROFIT|CUT_LOSS|TRAIL_STOP",
   "exit_target_price": <float64 DEFAULT 0>,
   "exit_cut_loss_price": <float64 DEFAULT 0>,
   "reasoning": "<Penjelasan fokus pada PERUBAHAN kondisi dan justifikasi untuk aksi yang direkomendasikan>",

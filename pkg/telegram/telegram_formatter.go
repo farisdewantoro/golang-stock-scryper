@@ -260,9 +260,9 @@ func FormatPositionMonitoringMessage(position *dto.PositionMonitoringResponseMul
 		iconAction = "🟡"
 	} else if position.Action == "CUT_LOSS" {
 		iconAction = "🔴"
-	} else if position.Action == "SELL" {
+	} else if position.Action == "TAKE_PROFIT" {
 		iconAction = "🟢"
-	} else if position.Action == "ADJUST_STOP" {
+	} else if position.Action == "TRAIL_STOP" {
 		iconAction = "🟠"
 	}
 
