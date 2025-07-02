@@ -118,8 +118,5 @@ func CapitalizeSentence(input string) string {
 }
 
 func FormatPercentage(value float64) string {
-	if value >= 0 {
-		return fmt.Sprintf("+%.1f%%", value)
-	}
-	return fmt.Sprintf("-%.1f%%", -value)
+	return fmt.Sprintf("%+.1f%%", value)
 }

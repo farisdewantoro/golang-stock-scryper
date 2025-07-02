@@ -194,7 +194,7 @@ func FormatAnalysisMessage(analysis *dto.IndividualAnalysisResponseMultiTimefram
 	// Recommendation
 	if analysis.Action != "HOLD" {
 		gain := float64(analysis.TargetPrice-analysis.BuyPrice) / float64(analysis.BuyPrice) * 100
-		loss := float64(analysis.BuyPrice-analysis.CutLoss) / float64(analysis.BuyPrice) * 100
+		loss := float64(analysis.CutLoss-analysis.BuyPrice) / float64(analysis.BuyPrice) * 100
 		sb.WriteString("<b>Trade Plan</b>\n")
 		sb.WriteString(fmt.Sprintf("📌 Last Price: %d (%s)\n", int(analysis.MarketPrice), analysis.AnalysisDate.Format("01-02 15:04")))
 		sb.WriteString(fmt.Sprintf("💵 Buy Area: $%d\n", int(analysis.BuyPrice)))
@@ -274,7 +274,7 @@ func FormatPositionMonitoringMessage(position *dto.PositionMonitoringResponseMul
 
 	// Recommendation
 	gain := float64(position.ExitTargetPrice-position.BuyPrice) / float64(position.BuyPrice) * 100
-	loss := float64(position.BuyPrice-position.ExitCutLossPrice) / float64(position.BuyPrice) * 100
+	loss := float64(position.ExitCutLossPrice-position.BuyPrice) / float64(position.BuyPrice) * 100
 	sb.WriteString("💡 <b>Recommendation:</b>\n")
 	sb.WriteString(fmt.Sprintf(" • Action: %s %s\n", iconAction, position.Action))
 	sb.WriteString(fmt.Sprintf(" • Target Price: $%d %s\n", int(position.ExitTargetPrice), utils.FormatPercentage(gain)))
