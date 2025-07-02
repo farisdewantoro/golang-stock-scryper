@@ -97,6 +97,7 @@ func (s *StockPriceAlertStrategy) Execute(ctx context.Context, job *entity.Job) 
 
 	stockPositions, err := s.stockPositionsRepository.Get(ctx, dto.GetStockPositionsParam{
 		PriceAlert: utils.ToPointer(true),
+		IsActive:   utils.ToPointer(true),
 	})
 	if err != nil {
 		return FAILED, err
