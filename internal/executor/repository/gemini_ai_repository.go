@@ -108,8 +108,7 @@ func (r *geminiAIRepository) executeGeminiAIRequest(ctx context.Context, prompt 
 	}
 
 	//debug
-	jsonPrompt, _ := json.MarshalIndent(prompt, "", "  ")
-	r.logger.Debug("Request Gemini API", logger.StringField("prompt", string(jsonPrompt)))
+	r.logger.Debug("Request Gemini API", logger.StringField("prompt", prompt))
 
 	jsonPayload, err := json.Marshal(payload)
 
