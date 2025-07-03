@@ -23,6 +23,7 @@ import (
 
 const (
 	REDIS_KEY_STOCK_PRICE_ALERT = "stock_price_alert:%s:%s"
+	REDIS_KEY_LAST_PRICE        = "last_price:%s"
 )
 
 // StockPriceAlertStrategy defines the strategy for scraping stock news.
@@ -121,6 +122,20 @@ func (s *StockPriceAlertStrategy) Execute(ctx context.Context, job *entity.Job) 
 			resultData.Errors = err.Error()
 			results = append(results, resultData)
 			continue
+		}
+
+		// set last price in Redis
+		key := fmt.Sprintf(REDIS_KEY_LAST_PRICE, stockPosition.StockCode)
+		redisPipe := s.redisClient.Pipeline()
+		redisPipe.HSet(ctx, key, map[string]interface{}{
+			"price":     stockData.MarketPrice,
+			"timestamp": utils.TimeNowWIB().Unix(),
+		})
+		redisPipe.Expire(ctx, key, alertCacheDuration+2*time.Minute)
+		_, errRedis := redisPipe.Exec(ctx)
+		if errRedis != nil {
+			s.logger.Error("Failed to execute Redis pipeline",
+				logger.ErrorField(errRedis), logger.StringField("stock_code", stockPosition.StockCode))
 		}
 
 		reachTakeProfitIn := 0.0
