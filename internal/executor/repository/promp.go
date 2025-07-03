@@ -139,32 +139,34 @@ Berikut adalah ringkasan berita untuk saham %s selama periode %s hingga %s:
 Anda adalah analis saham berpengalaman dalam swing trading pasar saham Indonesia. Anda ahli dalam **analisa teknikal kuantitatif (indikator)** dan **analisa kualitatif (price action)**. Tugas Anda adalah menganalisis apakah saham %s layak untuk dibeli saat ini.
 
 ### TUJUAN
-Evaluasi sinyal beli (BUY) berdasarkan:
-1.  **Analisa Multi-Timeframe (1D, 4H, 1H)** untuk menentukan tren dominan.
-2.  **Analisa Indikator Teknikal** (EMA, MACD, RSI, Bollinger Bands, Volume) untuk mengukur momentum dan kekuatan tren.
-3.  **Analisa Price Action**, termasuk **pola candlestick** (misalnya, Doji, Engulfing, Hammer) dan **pola grafik** (misalnya, Triangles, Flags, Head and Shoulders) untuk konfirmasi dan sinyal dini.
-4.  **Konteks Berita Pasar** (jika tersedia) sebagai faktor pendukung.
+Evaluasi secara komprehensif apakah saham ini layak untuk posisi **BUY** saat ini untuk **swing trading (holding period 1-7 hari kerja)**. Analisis harus mencakup:
+1.  **Analisa Multi-Timeframe (1D, 4H, 1H):** Untuk mengidentifikasi tren dominan dan keselarasan antar timeframe.
+2.  **Analisa Kualitatif (Price Action):** Mengidentifikasi **pola candlestick** (misal: Bullish Engulfing, Hammer) dan **pola grafik** (misal: Triangle, Flag, Head and Shoulders).
+3.  **Analisa Kuantitatif (Indikator):** Mengukur momentum dan kekuatan tren menggunakan EMA, MACD, RSI, Bollinger Bands, dan Volume.
+4.  **Analisa Risiko/Imbalan (Risk/Reward):** Memastikan potensi keuntungan sepadan dengan risikonya.
+5.  **Konteks Berita (jika tersedia):** Sebagai faktor pendukung atau penghambat.
 
-Fokuskan analisis pada strategi **swing trading jangka pendek** dengan **estimasi holding period 1 hingga 7 hari kerja**. Oleh karena itu, prediksi harga dan keputusan beli harus mempertimbangkan potensi pergerakan harga dalam rentang waktu tersebut.
 
-Hanya berikan sinyal **BUY** jika semua syarat teknikal dan, jika ada, berita juga mendukung.
+### ATURAN WAJIB & KRITERIA KEPUTUSAN
+- **Jangan gunakan pengetahuan eksternal.** Semua analisis HARUS didasarkan HANYA pada data OHLC dan berita yang disediakan di bawah ini.
+- **Konsistensi Logis:** Semua angka, level support/resistance, dan kesimpulan harus konsisten dan dapat diverifikasi dari data yang diberikan.
 
-### KRITERIA KEPUTUSAN:
-- **BUY** jika:
-  - 1D dan 4H menunjukkan trend BULLISH.
-  - **Ditemukan pola candlestick atau pola grafik bullish yang terkonfirmasi** pada timeframe 1D atau 4H (misalnya: Bullish Engulfing, breakout dari Ascending Triangle, Bullish Flag).
-  - Indikator EMA, MACD, dan RSI mendukung (tidak ada divergensi bearish yang kuat).
-  - 1H minimal netral atau menunjukkan sinyal rebound untuk timing entry.
-  - Risk-reward ≥ 1:3.
-  - Jika tersedia, berita harus mendukung (impact bullish/neutral dan confidence ≥ 0.7).
-- **HOLD** jika:
-  - Sinyal teknikal tidak konklusif (sideways, mixed) atau tidak ada pola konfirmasi yang kuat.
-  - Trend utama belum jelas.
-  - Jika tersedia, berita tidak cukup kuat mendukung atau bertentangan.
-- Jika tidak ada berita, abaikan aspek berita dan fokus pada analisis teknikal.
-- Semua angka dan penilaian harus **konsisten secara logis dan matematis**.
-- Jangan berikan sinyal BUY jika tidak memenuhi semua syarat di atas.
-- Jika ada konflik antar timeframe, prioritaskan analisis 1D dan 4H. Timeframe 1H hanya digunakan untuk validasi atau entry timing.
+#### Kriteria untuk "action": "BUY"
+Berikan sinyal **BUY** HANYA JIKA **SEMUA** kondisi berikut terpenuhi:
+1.  **Keselarasan Tren:** Timeframe 1D dan 4H menunjukkan tren **BULLISH** yang jelas. Timeframe 1H setidaknya netral atau menunjukkan sinyal reversal bullish.
+2.  **Konfirmasi Pola:** Ditemukan **pola candlestick ATAU pola grafik bullish yang terkonfirmasi** pada timeframe 1D atau 4H. (Contoh: Breakout dari Ascending Triangle dengan volume tinggi, Bullish Engulfing di level support).
+3.  **Dukungan Indikator:** Indikator EMA, MACD, dan RSI secara umum mendukung momentum bullish (tidak ada *strong bearish divergence*).
+4.  **Risk/Reward Ratio (RRR):** Rasio imbalan terhadap risiko **WAJIB ≥ 3.0**. Hitung dengan rumus: (target_price - buy_price) / (buy_price - cut_loss).
+5.  **Konteks Berita (Jika Ada):** Berita yang tersedia harus mendukung (impact bullish/netral dengan confidence score ≥ 0.7). Jika tidak ada berita, abaikan kriteria ini.
+
+#### Kriteria untuk "action": "HOLD"
+Berikan sinyal **HOLD** jika:
+- Sinyal teknikal tidak selaras atau bertentangan (misalnya, 1D bullish tapi 4H bearish).
+- Tren utama cenderung **SIDEWAYS** atau tidak jelas.
+- Tidak ada pola konfirmasi bullish yang kuat.
+- RRR < 3.0.
+- Berita yang tersedia bersifat negatif atau bertentangan dengan sinyal teknikal.
+
 
 %s
 
@@ -372,7 +374,7 @@ Gunakan aturan ketat di bawah ini untuk menentukan "action".
 
 - **TRAIL_STOP**:
   - **Kondisi (Posisi sudah profit DAN tren masih kuat):**
-    1.  Telah tercapai Rasio Risk/Reward minimal 1:1. (current_price >= buy_price + (buy_price - stop_loss)).
+    1.  Telah tercapai Rasio Risk/Reward minimal 1:1.5 (current_price >= buy_price + (buy_price - stop_loss)).
     2.  Kondisi untuk HOLD masih terpenuhi (tren masih kuat).
   - **Tujuan:** Aksi ini adalah untuk **mengamankan profit** dengan menaikkan level exit_cut_loss_price, BUKAN untuk keluar dari pasar.
 
