@@ -82,7 +82,7 @@ func (r *geminiAIRepository) executeGeminiAIRequest(ctx context.Context, prompt 
 		genai.NewContentFromText(prompt, "user"),
 	}
 	selectedModel := r.cfg.Gemini.Model
-	if model == "" {
+	if model != "" {
 		selectedModel = model
 	}
 
