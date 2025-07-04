@@ -36,6 +36,7 @@ type Gemini struct {
 	MaxRequestPerMinute int    `mapstructure:"max_request_per_minute"`
 	MaxTokenPerMinute   int    `mapstructure:"max_token_per_minute"`
 	BaseURL             string `mapstructure:"base_url"`
+	NewsModel           string `mapstructure:"news_model"`
 }
 
 // AI holds configuration for AI providers.

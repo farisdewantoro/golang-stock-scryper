@@ -45,6 +45,7 @@ gemini:
   max_request_per_minute: 15
   max_token_per_minute: 1_000_000
   base_url: "https://generativelanguage.googleapis.com/v1beta/models"
+  news_model: "gemma-3-27b-it"
 
 openai:
   api_key: "XXXXX"

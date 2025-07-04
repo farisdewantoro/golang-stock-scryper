@@ -52,7 +52,7 @@ func NewGeminiAIRepository(cfg *config.Config, log *logger.Logger, genAiClient *
 func (r *geminiAIRepository) NewsAnalyze(ctx context.Context, title, publishedDate, content string) (*dto.NewsAnalysisResult, error) {
 	prompt := BuildAnalyzeNewsPrompt(title, publishedDate, content)
 
-	geminiResp, err := r.executeGeminiAIRequest(ctx, prompt)
+	geminiResp, err := r.executeGeminiAIRequest(ctx, prompt, r.cfg.Gemini.NewsModel)
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +69,7 @@ func (r *geminiAIRepository) NewsAnalyze(ctx context.Context, title, publishedDa
 func (r *geminiAIRepository) GenerateNewsSummary(ctx context.Context, stockCode string, newsItems []entity.StockNews) (*dto.NewsSummaryResult, error) {
 	prompt := BuildSummarizeNewsPrompt(stockCode, newsItems)
 
-	geminiResp, err := r.executeGeminiAIRequest(ctx, prompt)
+	geminiResp, err := r.executeGeminiAIRequest(ctx, prompt, r.cfg.Gemini.NewsModel)
 	if err != nil {
 		return nil, err
 	}
@@ -77,11 +77,16 @@ func (r *geminiAIRepository) GenerateNewsSummary(ctx context.Context, stockCode 
 	return r.parseSummaryResponse(geminiResp)
 }
 
-func (r *geminiAIRepository) executeGeminiAIRequest(ctx context.Context, prompt string) (*dto.GeminiAPIResponse, error) {
+func (r *geminiAIRepository) executeGeminiAIRequest(ctx context.Context, prompt string, model string) (*dto.GeminiAPIResponse, error) {
 	contents := []*genai.Content{
 		genai.NewContentFromText(prompt, "user"),
 	}
-	geminiTokenResp, err := r.genAiClient.Models.CountTokens(ctx, r.cfg.Gemini.Model, contents, nil)
+	selectedModel := r.cfg.Gemini.Model
+	if model == "" {
+		selectedModel = model
+	}
+
+	geminiTokenResp, err := r.genAiClient.Models.CountTokens(ctx, selectedModel, contents, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to count tokens: %w", err)
 	}
@@ -108,7 +113,7 @@ func (r *geminiAIRepository) executeGeminiAIRequest(ctx context.Context, prompt 
 	}
 
 	//debug
-	r.logger.Debug("Request Gemini API", logger.StringField("prompt", prompt))
+	r.logger.Debug("Request Gemini API", logger.StringField("prompt", prompt), logger.StringField("model", selectedModel))
 
 	jsonPayload, err := json.Marshal(payload)
 
@@ -117,7 +122,7 @@ func (r *geminiAIRepository) executeGeminiAIRequest(ctx context.Context, prompt 
 		return nil, fmt.Errorf("failed to marshal payload: %w", err)
 	}
 
-	apiURL := fmt.Sprintf("%s/%s:generateContent?key=%s", r.cfg.Gemini.BaseURL, r.cfg.Gemini.Model, r.cfg.Gemini.APIKey)
+	apiURL := fmt.Sprintf("%s/%s:generateContent?key=%s", r.cfg.Gemini.BaseURL, selectedModel, r.cfg.Gemini.APIKey)
 	req, err := http.NewRequestWithContext(ctx, "POST", apiURL, bytes.NewBuffer(jsonPayload))
 	if err != nil {
 		r.logger.Error("Failed to create new http request", logger.ErrorField(err), logger.StringField("prompt", prompt))
@@ -181,7 +186,7 @@ func (r *geminiAIRepository) parseSummaryResponse(resp *dto.GeminiAPIResponse) (
 func (r *geminiAIRepository) AnalyzeStockMultiTimeframe(ctx context.Context, symbol string, stockData *dto.StockDataMultiTimeframe, summary *entity.StockNewsSummary) (*dto.IndividualAnalysisResponseMultiTimeframe, error) {
 	prompt := BuildIndividualAnalysisMultiTimeframePrompt(ctx, symbol, stockData, summary)
 
-	geminiResp, err := r.executeGeminiAIRequest(ctx, prompt)
+	geminiResp, err := r.executeGeminiAIRequest(ctx, prompt, r.cfg.Gemini.Model)
 	if err != nil {
 		return nil, err
 	}
@@ -211,7 +216,7 @@ func (r *geminiAIRepository) AnalyzeStockMultiTimeframe(ctx context.Context, sym
 
 func (r *geminiAIRepository) PositionMonitoringMultiTimeframe(ctx context.Context, request *dto.PositionMonitoringRequest, stockData *dto.StockDataMultiTimeframe, summary *entity.StockNewsSummary) (*dto.PositionMonitoringResponseMultiTimeframe, error) {
 	prompt := BuildPositionMonitoringMultiTimeframePrompt(ctx, request, stockData, summary)
-	geminiResp, err := r.executeGeminiAIRequest(ctx, prompt)
+	geminiResp, err := r.executeGeminiAIRequest(ctx, prompt, r.cfg.Gemini.Model)
 	if err != nil {
 		return nil, err
 	}
