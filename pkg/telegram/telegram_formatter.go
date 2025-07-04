@@ -169,7 +169,7 @@ func FormatStockAlertResultForTelegram(alertType AlertType, stockCode string, tr
 	}
 
 	builder.WriteString(fmt.Sprintf("%s [%s] %s\n", emoji, stockCode, title))
-	builder.WriteString(fmt.Sprintf("💰Harga menyentuh: %.3f (target: %.3f)\n", triggerPrice, targetPrice))
+	builder.WriteString(fmt.Sprintf("💰Harga menyentuh: %d (target: %d)\n", int(triggerPrice), int(targetPrice)))
 	builder.WriteString(fmt.Sprintf("%s\n", utils.PrettyDate(time.Unix(timestamp, 0))))
 	return builder.String()
 }
